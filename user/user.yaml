@@ -1,0 +1,219 @@
+openapi: 3.0.3
+info:
+  title: User Service API
+  description: API for browsing, adding, and updating users.
+  version: "1.0.0"
+  contact:
+    name: Rafael Baudry
+    email: rafael.baudry@imt-atlantique.fr
+servers:
+  - url: 'https://localhost:3203'
+    description: Local development server
+
+#tags:
+#  - name: admin
+#    description: Secured Admin-only calls
+#  - name: dev
+#    description: Operations available to regular developers
+
+paths:
+  /:
+    get:
+#      tags:
+#        - dev
+      summary: Service home page
+      description: Returns an HTML welcome message.
+      responses:
+        "200":
+          description: HTML welcome message
+          content:
+            text/html:
+              schema:
+                type: string
+                example: "<h1 style='color:blue'>Welcome to the User service!</h1>"
+
+  /users:
+    get:
+#      tags:
+#        - dev
+      summary: Retrieve the full list of users
+      description: Returns the list of all available users.
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+    post:
+      #      tags:
+      #        - admin
+      summary: Add a new user
+      description: Adds a user with the given ID, if it doesn't already exist.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/User"
+      responses:
+        "200":
+          description: User added successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: user was created
+        "500":
+          description: User ID already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorAlreadyExists"
+
+  /users/{user_id}:
+    get:
+#      tags:
+#        - dev
+      summary: Retrieve a user by its ID
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "200":
+          description: User found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "500":
+          description: User ID not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorNotExists"
+    put:
+#      tags:
+#        - admin
+      summary: Update a user
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/User"
+      responses:
+        "200":
+          description: user was updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "500":
+          description: user ID does not exist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorNotExists"
+    delete:
+      summary: Delete a user
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "200" :
+          description: user was removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "500":
+          description: user ID does not exist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorNotExists"
+
+  /users/{user_id}/{role}:
+    put:
+      #      tags:
+      #        - admin
+      summary: Update a user's role
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+        - name: role
+          in: query
+          required: true
+          description: The role you want the user to have
+          schema:
+            type: string
+      responses:
+        "200":
+          description: user was updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "500":
+          description: user ID does not exist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorNotExists"
+
+
+components:
+  parameters:
+    UserId:
+      name: user_id
+      in: path
+      required: true
+      description: Unique identifier of the user
+      schema:
+        type: string
+
+  schemas:
+    User:
+      type: object
+      description: Representation of a user.
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier of the user
+          example: "rafa_baud"
+        name:
+          type: string
+          description: User name
+          example: "Rafa Baud"
+        last_active:
+          type: number
+          format: int
+          description: User last activity date
+          example: 1360031202
+        role:
+          type: string
+          description: User's role
+          example: "admin"
+      required:
+        - id
+
+    ErrorNotExists:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "User ID does not exists"
+
+    ErrorAlreadyExists:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "user ID already exists"
+

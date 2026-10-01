@@ -3,37 +3,50 @@
     {
       "id": "chris_rivers",
       "name": "Chris Rivers",
-      "last_active":1360031010
+      "last_active": 1360031010,
+      "role": "user"
     },
     {
       "id": "peter_curley",
       "name": "Peter Curley",
-      "last_active": 1360031222
+      "last_active": 1360031222,
+      "role": "user"
     },
     {
       "id": "garret_heaton",
       "name": "Garret Heaton",
-      "last_active": 1360031425
+      "last_active": 1360031425,
+      "role": "user"
     },
     {
       "id": "michael_scott",
       "name": "Michael Scott",
-      "last_active": 1360031625
+      "last_active": 1360031625,
+      "role": "user"
     },
     {
       "id": "jim_halpert",
       "name": "Jim Halpert",
-      "last_active": 1360031325
+      "last_active": 1360031325,
+      "role": "user"
     },
     {
       "id": "pam_beesly",
       "name": "Pam Beesly",
-      "last_active": 1360031225
+      "last_active": 1360031225,
+      "role": "user"
     },
     {
       "id": "dwight_schrute",
       "name": "Dwight Schrute",
-      "last_active": 1360031202
+      "last_active": 1360031202,
+      "role": "user"
+    },
+    {
+      "id": "rafael_baudry",
+      "name": "Rafael Baudry",
+      "last_active": 1360031203,
+      "role": "admin"
     }
   ]
 }
