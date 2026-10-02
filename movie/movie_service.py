@@ -42,10 +42,10 @@ def get_by_id(movieid):
 def get_by_title(title):
     if not title:
         raise ValidationError("missing 'title' query parameter")
-    movie = next((m for m in movies if m["title"] == title), None)
-    if movie is None:
+    matches = [m for m in movies if m["title"] == title]
+    if not matches:
         raise NotFoundError("movie not found")
-    return movie
+    return matches
 
 def add_movie(body):
     validate_fields(body, partial=False)

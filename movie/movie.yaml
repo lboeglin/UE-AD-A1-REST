@@ -146,7 +146,8 @@ paths:
     get:
       tags:
         - dev
-      summary: Retrieve a movie by its title
+      summary: Retrieve the movies with a given title
+      description: Several movies can share a title (e.g. remakes), so every match is returned.
       parameters:
         - name: title
           in: query
@@ -157,11 +158,13 @@ paths:
           example: "Creed"
       responses:
         "200":
-          description: Movie found
+          description: Movies with this exact title
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Movie"
+                type: array
+                items:
+                  $ref: "#/components/schemas/Movie"
         "400":
           description: Missing title query parameter
           content:

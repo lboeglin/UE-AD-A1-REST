@@ -33,8 +33,7 @@ def get_movie_byid(movieid):
 
 @app.route("/moviesbytitle", methods=['GET'])
 def get_movie_bytitle():
-    movie = movie_service.get_by_title(request.args.get("title"))
-    return make_response(jsonify(movie), 200)
+    return make_response(jsonify(movie_service.get_by_title(request.args.get("title"))), 200)
 
 @app.route("/movies", methods=['POST'])
 def add_movie():
