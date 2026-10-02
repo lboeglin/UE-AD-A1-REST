@@ -1,0 +1,309 @@
+openapi: 3.0.3
+info:
+  title: Booking Service API
+  description: |
+    API managing the bookings of each user (dates and movies booked).
+    No authentication for now: every operation is open.
+    When a booking is added, the Schedule service is asked whether the movie is shown on that date.
+  version: "1.0.0"
+servers:
+  - url: http://localhost:3201
+    description: Local development server
+
+tags:
+- name: admin
+  description: Secured Admin-only calls
+- name: dev
+  description: Operations available to regular developers
+
+paths:
+  /:
+    get:
+      tags:
+        - dev
+      summary: Service home page
+      responses:
+        "200":
+          description: HTML welcome message
+          content:
+            text/html:
+              schema:
+                type: string
+                example: "<h1 style='color:blue'>Welcome to the Booking service!</h1>"
+
+  /bookings:
+    get:
+      tags:
+        - admin
+      summary: Retrieve all bookings
+      responses:
+        "200":
+          description: Bookings of every user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Booking"
+
+  /bookings/{userid}:
+    get:
+      tags:
+        - dev
+      summary: Retrieve the bookings of a user
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "200":
+          description: Bookings of the user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+        "404":
+          $ref: "#/components/responses/NoBooking"
+
+    post:
+      tags:
+        - dev
+      summary: Add a booking for a user
+      description: |
+        Books a movie on a date for the user.
+        The Schedule service is called to check that the movie is shown on that date.
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookingInput"
+            example:
+              date: "20151202"
+              movieid: "a8034f44-aee4-44cf-b32c-74cf452aaaae"
+      responses:
+        "201":
+          description: Booking added, returns all the bookings of the user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+              example:
+                userid: "chris_rivers"
+                dates:
+                  - date: "20151201"
+                    movies: ["267eedb8-0f5d-42d5-8f43-72426b9fb3e6"]
+                  - date: "20151202"
+                    movies: ["a8034f44-aee4-44cf-b32c-74cf452aaaae"]
+        "400":
+          description: Invalid body, or the movie is not shown on this date
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                notScheduled:
+                  value:
+                    error: "this movie is not scheduled on this date"
+                badBody:
+                  value:
+                    error: "body must be a JSON object with 'date' and 'movieid' strings"
+        "409":
+          description: The user already booked this movie on this date
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: "this booking already exists"
+        "502":
+          $ref: "#/components/responses/BadGateway"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  /bookings/{userid}/{date}/{movieid}:
+    delete:
+      tags:
+        - dev
+      summary: Cancel a booking
+      description: Removes one movie booked on one date.
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+        - name: date
+          in: path
+          required: true
+          description: Date, format YYYYMMDD
+          schema:
+            type: string
+          example: "20151201"
+        - name: movieid
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "267eedb8-0f5d-42d5-8f43-72426b9fb3e6"
+      responses:
+        "200":
+          description: Booking cancelled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userid:
+                    type: string
+                  date:
+                    type: string
+                  movieid:
+                    type: string
+              example:
+                userid: "chris_rivers"
+                date: "20151201"
+                movieid: "267eedb8-0f5d-42d5-8f43-72426b9fb3e6"
+        "404":
+          description: Booking not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: "booking not found"
+
+  /bookings/{userid}/movies:
+    get:
+      tags:
+        - dev
+      summary: Retrieve the bookings of a user with movie details
+      description: |
+        Same as `GET /bookings/{userid}`, but each movie ID is replaced by the movie details
+        fetched from the Movie service. A movie missing from the catalog is returned with
+        `title: null`.
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "200":
+          description: Detailed bookings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DetailedBooking"
+        "404":
+          $ref: "#/components/responses/NoBooking"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+components:
+  parameters:
+    UserId:
+      name: userid
+      in: path
+      required: true
+      description: Unique identifier of the user
+      schema:
+        type: string
+      example: "chris_rivers"
+
+  responses:
+    NoBooking:
+      description: The user has no booking
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: "no booking for this user"
+    BadGateway:
+      description: A called service returned an unexpected error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: "schedule service error"
+    ServiceUnavailable:
+      description: A called service (Schedule or Movie) is unreachable
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: "schedule service unavailable"
+
+  schemas:
+    Booking:
+      type: object
+      properties:
+        userid:
+          type: string
+          example: "chris_rivers"
+        dates:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                example: "20151201"
+              movies:
+                type: array
+                items:
+                  type: string
+                example: ["267eedb8-0f5d-42d5-8f43-72426b9fb3e6"]
+      required:
+        - userid
+        - dates
+
+    BookingInput:
+      type: object
+      properties:
+        date:
+          type: string
+          description: Date, format YYYYMMDD
+        movieid:
+          type: string
+      required:
+        - date
+        - movieid
+
+    Movie:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "267eedb8-0f5d-42d5-8f43-72426b9fb3e6"
+        title:
+          type: string
+          nullable: true
+          example: "Creed"
+        rating:
+          type: number
+          example: 8.8
+        director:
+          type: string
+          example: "Ryan Coogler"
+
+    DetailedBooking:
+      type: object
+      properties:
+        userid:
+          type: string
+          example: "chris_rivers"
+        dates:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                example: "20151201"
+              movies:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Movie"
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "booking not found"
