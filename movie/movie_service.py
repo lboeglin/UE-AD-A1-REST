@@ -1,12 +1,10 @@
 import json
 import os
+import uuid
 
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "databases", "movies.json")
 
 class NotFoundError(Exception):
-    pass
-
-class ConflictError(Exception):
     pass
 
 class ValidationError(Exception):
@@ -32,14 +30,11 @@ def validate_fields(body, partial):
     if "rating" in body and (isinstance(body["rating"], bool) or not isinstance(body["rating"], (int, float))):
         raise ValidationError("'rating' must be a number")
 
-def find_movie(movieid):
-    return next((m for m in movies if m["id"] == movieid), None)
-
 def get_all():
     return movies
 
 def get_by_id(movieid):
-    movie = find_movie(movieid)
+    movie = next((m for m in movies if m["id"] == movieid), None)
     if movie is None:
         raise NotFoundError("movie not found")
     return movie
@@ -52,11 +47,9 @@ def get_by_title(title):
         raise NotFoundError("movie not found")
     return movie
 
-def add_movie(movieid, body):
+def add_movie(body):
     validate_fields(body, partial=False)
-    if find_movie(movieid):
-        raise ConflictError("movie already exists")
-    movie = {"id": movieid, "title": body["title"],
+    movie = {"id": str(uuid.uuid4()), "title": body["title"],
              "rating": body.get("rating", 0), "director": body.get("director", "")}
     movies.append(movie)
     write(movies)

@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify, make_response
 import movie_service
-from movie_service import NotFoundError, ConflictError, ValidationError
+from movie_service import NotFoundError, ValidationError
 
 app = Flask(__name__)
 
@@ -13,10 +13,6 @@ def error(message, code):
 @app.errorhandler(NotFoundError)
 def handle_not_found(e):
     return error(str(e), 404)
-
-@app.errorhandler(ConflictError)
-def handle_conflict(e):
-    return error(str(e), 409)
 
 @app.errorhandler(ValidationError)
 def handle_validation(e):
@@ -40,9 +36,9 @@ def get_movie_bytitle():
     movie = movie_service.get_by_title(request.args.get("title"))
     return make_response(jsonify(movie), 200)
 
-@app.route("/movies/<movieid>", methods=['POST'])
-def add_movie(movieid):
-    movie = movie_service.add_movie(movieid, request.get_json(silent=True))
+@app.route("/movies", methods=['POST'])
+def add_movie():
+    movie = movie_service.add_movie(request.get_json(silent=True))
     return make_response(jsonify(movie), 201)
 
 @app.route("/movies/<movieid>", methods=['PUT'])

@@ -41,12 +41,6 @@
       "rating": 7.1,
       "director": "Sam Mendes",
       "id": "39ab85e5-5e8e-4dc5-afea-65dc368bd7ab"
-    },
-    {
-      "title": "Test",
-      "rating": 1.2,
-      "director": "Someone",
-      "id": "xxx"
     }
   ]
 }
