@@ -1,7 +1,9 @@
 openapi: 3.0.3
 info:
   title: Movie Service API
-  description: API for browsing, adding, and rating movies.
+  description: |
+    API for browsing, adding, updating and deleting movies.
+    Read operations are public. Write operations are open (no authentication for now).
   version: "1.0.0"
   contact:
     name: Helene Coullon
@@ -63,18 +65,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Movie"
-        "500":
-          description: Movie ID not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+        "404":
+          $ref: "#/components/responses/MovieNotFound"
 
     post:
       tags:
         - admin
       summary: Add a new movie
-      description: Adds a movie with the given ID, if it doesn't already exist.
+      description: Adds a movie with the given ID, if it doesn't already exist. The ID is taken from the path.
       parameters:
         - $ref: "#/components/parameters/MovieId"
       requestBody:
@@ -82,24 +80,76 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Movie"
+              $ref: "#/components/schemas/MovieInput"
+            example:
+              title: "Dune"
+              rating: 8.1
+              director: "Denis Villeneuve"
       responses:
-        "200":
+        "201":
           description: Movie added successfully
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: movie added
-        "500":
+                $ref: "#/components/schemas/Movie"
+              example:
+                id: "dune-2021"
+                title: "Dune"
+                rating: 8.1
+                director: "Denis Villeneuve"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
           description: Movie ID already exists
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+              example:
+                error: "movie already exists"
+
+    put:
+      tags:
+        - admin
+      summary: Update a movie
+      description: Updates the given fields of a movie (partial update).
+      parameters:
+        - $ref: "#/components/parameters/MovieId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MovieUpdate"
+            example:
+              rating: 8.5
+      responses:
+        "200":
+          description: Movie updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Movie"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/MovieNotFound"
+
+    delete:
+      tags:
+        - admin
+      summary: Delete a movie
+      parameters:
+        - $ref: "#/components/parameters/MovieId"
+      responses:
+        "200":
+          description: Movie deleted, returns the deleted movie
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Movie"
+        "404":
+          $ref: "#/components/responses/MovieNotFound"
 
   /moviesbytitle:
     get:
@@ -113,6 +163,7 @@ paths:
           description: Exact title of the movie to search for
           schema:
             type: string
+          example: "Creed"
       responses:
         "200":
           description: Movie found
@@ -120,12 +171,16 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Movie"
-        "500":
-          description: Movie title not found
+        "400":
+          description: Missing title query parameter
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+              example:
+                error: "missing 'title' query parameter"
+        "404":
+          $ref: "#/components/responses/MovieNotFound"
 
   /movies/{movieid}/{rate}:
     put:
@@ -139,7 +194,8 @@ paths:
           required: true
           description: New rating to assign to the movie
           schema:
-            type: string
+            type: number
+          example: 7.9
       responses:
         "200":
           description: Movie updated successfully
@@ -147,12 +203,16 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Movie"
-        "500":
-          description: Movie ID not found
+        "400":
+          description: Rate is not a number
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+              example:
+                error: "rate must be a number"
+        "404":
+          $ref: "#/components/responses/MovieNotFound"
 
 components:
   parameters:
@@ -163,6 +223,25 @@ components:
       description: Unique identifier of the movie
       schema:
         type: string
+      example: "267eedb8-0f5d-42d5-8f43-72426b9fb3e6"
+
+  responses:
+    BadRequest:
+      description: Invalid request body
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: "'rating' must be a number"
+    MovieNotFound:
+      description: Movie not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: "movie not found"
 
   schemas:
     Movie:
@@ -171,7 +250,6 @@ components:
       properties:
         id:
           type: string
-          format: uuid
           description: Unique identifier of the movie
           example: "720d006c-3a57-4b6a-b18f-9b713b073f3c"
         title:
@@ -191,9 +269,40 @@ components:
         - id
         - title
 
+    MovieInput:
+      type: object
+      description: Data needed to create a movie (the ID comes from the path).
+      properties:
+        title:
+          type: string
+          example: "Dune"
+        rating:
+          type: number
+          format: float
+          default: 0
+          example: 8.1
+        director:
+          type: string
+          default: ""
+          example: "Denis Villeneuve"
+      required:
+        - title
+
+    MovieUpdate:
+      type: object
+      description: Fields to update; all are optional.
+      properties:
+        title:
+          type: string
+        rating:
+          type: number
+          format: float
+        director:
+          type: string
+
     Error:
       type: object
       properties:
         error:
           type: string
-          example: "Movie ID not found"
+          example: "movie not found"
