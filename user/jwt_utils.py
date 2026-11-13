@@ -62,11 +62,11 @@ def require_self_or_admin(f):
     """Route decorator: token of current user must match <user_id> or be 'admin'."""
     @wraps(f)
     def wrapper(*args, **kwargs):
-      try:
-        payload = payload_from_request()
-      except ValueError as e:
-          return make_response(jsonify({"error": str(e)}), 401)
-      if payload.get("role") != "admin" and payload.get("sub") != kwargs.get("user_id"):
-          return make_response(jsonify({"error": "forbidden"}), 403)
-      return f(*args, **kwargs)
+        try:
+            payload = payload_from_request()
+        except ValueError as e:
+            return make_response(jsonify({"error": str(e)}), 401)
+        if payload.get("role") != "admin" and payload.get("sub") != kwargs.get("user_id"):
+            return make_response(jsonify({"error": "forbidden"}), 403)
+        return f(*args, **kwargs)
     return wrapper
