@@ -1,5 +1,6 @@
 import json
 import os
+from jwt_utils import jwt_encode
 
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "databases", "users.json")
 
@@ -54,6 +55,12 @@ def get_by_id(userid):
     if user is None:
         raise NotFoundError("user not found")
     return user
+
+def login(body):
+    if not isinstance(body, dict) or "user_id" not in body:
+        raise ValidationError("'user_id' is required")
+    user = get_by_id(body["user_id"])
+    return {"token": jwt_encode({"sub": user["id"], "role": user["role"]})}
 
 def add_user(body):
     validate_fields(body, partial=False)

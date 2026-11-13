@@ -1,16 +1,13 @@
 openapi: 3.0.3
 info:
   title: User Service API
-  description: |
-    API for browsing, adding, updating and deleting users.
-    Read operations are public. Write operations are open (no authentication for now).
+  description: Read operations are public. Write operations require an admin JWT (POST /login).
   version: "1.0.0"
   contact:
     name: Rafael Baudry
     email: rafael.baudry@imt-atlantique.fr
 servers:
   - url: http://localhost:3203
-    description: Local development server
 
 tags:
 - name: admin
@@ -21,10 +18,8 @@ tags:
 paths:
   /:
     get:
-      tags:
-        - dev
+      tags: [dev]
       summary: Service home page
-      description: Returns an HTML welcome message.
       responses:
         "200":
           description: HTML welcome message
@@ -32,14 +27,11 @@ paths:
             text/html:
               schema:
                 type: string
-                example: "<h1 style='color:blue'>Welcome to the User service!</h1>"
 
   /json:
     get:
-      tags:
-        - dev
+      tags: [dev]
       summary: Retrieve the full list of users
-      description: Returns the list of all available users.
       responses:
         "200":
           description: List of users
@@ -50,210 +42,218 @@ paths:
                 items:
                   $ref: "#/components/schemas/User"
 
+  /login:
+    post:
+      tags: [dev]
+      summary: Get a JWT token (valid 1 hour) for a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_id:
+                  type: string
+              required: [user_id]
+      responses:
+        "200":
+          description: Token created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/UserNotFound"
+
   /users:
     post:
-      tags:
-        - admin
-      summary: Add a new user
-      description: |
-        Adds a user. If no ID is given, the server generates one from the name
-        (e.g. "Chris Rivers" -> "chris_rivers", then "chris_rivers_1" if already taken).
+      tags: [admin]
+      security:
+        - bearerAuth: []
+      summary: Add a new user (ID generated from the name if omitted)
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/UserInput"
-            example:
-              name: "Rafa Baud"
-              last_active: 1360031202
-              role: "admin"
       responses:
         "201":
-          description: User added successfully, returns it with its ID
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/User"
-              example:
-                id: "rafa_baud"
-                name: "Rafa Baud"
-                last_active: 1360031202
-                role: "admin"
+          $ref: "#/components/responses/User"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "409":
-          description: The given user ID already exists
+          description: User ID already exists
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-              example:
-                error: "user ID already exists"
 
   /users/{user_id}:
+    parameters:
+      - $ref: "#/components/parameters/UserId"
     get:
-      tags:
-        - dev
+      tags: [dev]
       summary: Retrieve a user by its ID
-      parameters:
-        - $ref: "#/components/parameters/UserId"
       responses:
         "200":
-          description: User found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/User"
+          $ref: "#/components/responses/User"
         "404":
           $ref: "#/components/responses/UserNotFound"
 
     put:
-      tags:
-        - admin
-      summary: Update a user
-      description: Updates the given fields of a user (partial update). The ID cannot be changed.
-      parameters:
-        - $ref: "#/components/parameters/UserId"
+      tags: [admin]
+      security:
+        - bearerAuth: []
+      summary: Update a user (partial update)
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/UserUpdate"
-            example:
-              last_active: 1360031999
       responses:
         "200":
-          description: User updated successfully
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/User"
+          $ref: "#/components/responses/User"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/UserNotFound"
 
     delete:
-      tags:
-        - admin
+      tags: [admin]
+      security:
+        - bearerAuth: []
       summary: Delete a user
-      parameters:
-        - $ref: "#/components/parameters/UserId"
       responses:
         "200":
-          description: User deleted, returns the deleted user
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/User"
+          $ref: "#/components/responses/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/UserNotFound"
 
   /users/{user_id}/{role}:
     put:
-      tags:
-        - admin
+      tags: [admin]
+      security:
+        - bearerAuth: []
       summary: Update a user's role
       parameters:
         - $ref: "#/components/parameters/UserId"
         - name: role
           in: path
           required: true
-          description: The role you want the user to have
           schema:
             type: string
-          example: "admin"
       responses:
         "200":
-          description: User updated successfully
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/User"
+          $ref: "#/components/responses/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/UserNotFound"
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
   parameters:
     UserId:
       name: user_id
       in: path
       required: true
-      description: Unique identifier of the user
       schema:
         type: string
-      example: "chris_rivers"
 
   responses:
+    User:
+      description: The user
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/User"
     BadRequest:
       description: Invalid request body
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
-          example:
-            error: "'name' is required"
+    Unauthorized:
+      description: Missing, invalid or expired token
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Forbidden:
+      description: User is not an admin
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
     UserNotFound:
       description: User not found
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
-          example:
-            error: "user not found"
 
   schemas:
     User:
       type: object
-      description: Representation of a user.
       properties:
         id:
           type: string
-          description: Unique identifier of the user
-          example: "rafa_baud"
+          example: "chris_rivers"
         name:
           type: string
-          description: User name
-          example: "Rafa Baud"
+          example: "Chris Rivers"
         last_active:
           type: integer
-          description: Timestamp of the user's last activity
-          example: 1360031202
+          example: 1360031010
         role:
           type: string
-          description: User's role
-          example: "admin"
-      required:
-        - id
-        - name
+          example: "user"
+      required: [id, name]
 
     UserInput:
       type: object
-      description: Data needed to create a user (the ID is generated by the server if omitted).
       properties:
         id:
           type: string
-          description: Optional ID; must not already exist
-          example: "rafa_baud"
         name:
           type: string
-          example: "Rafa Baud"
         last_active:
           type: integer
           default: 0
-          example: 1360031202
         role:
           type: string
           default: "user"
-          example: "admin"
-      required:
-        - name
+      required: [name]
 
     UserUpdate:
       type: object
-      description: Fields to update; all are optional.
       properties:
         name:
           type: string
@@ -267,4 +267,3 @@ components:
       properties:
         error:
           type: string
-          example: "user not found"

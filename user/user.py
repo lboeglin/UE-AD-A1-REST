@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify, make_response
 import user_service
+from jwt_utils import require_admin, require_self_or_admin
 from user_service import NotFoundError, ConflictError, ValidationError
 
 app = Flask(__name__)
@@ -30,25 +31,33 @@ def home():
 def get_json():
     return make_response(jsonify(user_service.get_all()), 200)
 
+@app.route("/login", methods=['POST'])
+def login():
+    return make_response(jsonify(user_service.login(request.get_json(silent=True))), 200)
+
 @app.route("/users/<user_id>", methods=['GET'])
 def get_user_byid(user_id):
     return make_response(jsonify(user_service.get_by_id(user_id)), 200)
 
 @app.route("/users", methods=['POST'])
+@require_admin
 def add_user():
     user = user_service.add_user(request.get_json(silent=True))
     return make_response(jsonify(user), 201)
 
 @app.route("/users/<user_id>", methods=['PUT'])
+@require_self_or_admin
 def update_user(user_id):
     user = user_service.update_user(user_id, request.get_json(silent=True))
     return make_response(jsonify(user), 200)
 
 @app.route("/users/<user_id>/<role>", methods=['PUT'])
+@require_admin
 def update_user_role(user_id, role):
     return make_response(jsonify(user_service.update_role(user_id, role)), 200)
 
 @app.route("/users/<user_id>", methods=['DELETE'])
+@require_admin
 def delete_user(user_id):
     return make_response(jsonify(user_service.delete_user(user_id)), 200)
 
