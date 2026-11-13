@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify, make_response
 import user_service
-from jwt_utils import require_admin
+from jwt_utils import require_admin, require_self_or_admin
 from user_service import NotFoundError, ConflictError, ValidationError
 
 app = Flask(__name__)
@@ -46,7 +46,7 @@ def add_user():
     return make_response(jsonify(user), 201)
 
 @app.route("/users/<user_id>", methods=['PUT'])
-@require_admin
+@require_self_or_admin
 def update_user(user_id):
     user = user_service.update_user(user_id, request.get_json(silent=True))
     return make_response(jsonify(user), 200)
