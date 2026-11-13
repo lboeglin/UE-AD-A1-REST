@@ -72,7 +72,7 @@ def add_user(body):
 def update_user(userid, body):
     user = get_by_id(userid)
     validate_fields(body, partial=True)
-    for field in ("name", "last_active", "role"):
+    for field in ("name", "last_active"):
         if field in body:
             user[field] = body[field]
     write(users)
