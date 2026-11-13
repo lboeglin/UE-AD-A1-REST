@@ -12,12 +12,12 @@ class ConflictError(Exception):
 class ValidationError(Exception):
     pass
 
-with open(DB_PATH.format("."), 'r') as jsf:
-    times = json.load(jsf)["times"]
+with open(DB_PATH, 'r') as jsf:
+    times = json.load(jsf)["schedule"]
 
 def write(times):
     with open(DB_PATH, 'w') as f:
-        json.dump({"times": times}, f, indent=2)
+        json.dump({"schedule": times}, f, indent=2)
 
 def validate_fields(body, partial):
     """Raises ValidationError for invalid schedule fields."""
@@ -56,10 +56,14 @@ def update_movies(date, body):
     write(times)
     return time
 
-def add_movie(date, movie):
+def add_movies(date, body):
     time = get_by_date(date)
     try:
-        time["movies"].append(movie)
+        for movie in body["movies"]:
+            if movie in time["movies"]:
+                pass
+            else:
+                time["movies"].append(movie)
     except ValueError:
         raise ValidationError("movie must be a string")
     write(times)

@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify, make_response
 
 import schedule_service
-from schedule.schedule_service import ValidationError, NotFoundError, ConflictError
+from schedule_service import ValidationError, NotFoundError, ConflictError
 
 app = Flask(__name__)
 
@@ -43,7 +43,7 @@ def add_time():
 @app.route("/times/<date>", methods=['POST'])
 def add_movies(date):
     req = request.get_json()
-    return schedule_service.add_movie(date,req)
+    return schedule_service.add_movies(date,req)
 
 @app.route("/times/<date>", methods=['PUT'])
 def update_movies(date):
