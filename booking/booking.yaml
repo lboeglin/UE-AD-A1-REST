@@ -4,7 +4,10 @@ info:
   description: |
     API managing the bookings of each user (dates and movies booked).
     No authentication for now: every operation is open.
-    When a booking is added, the Schedule service is asked whether the movie is shown on that date.
+
+    Calls to other services:
+    - Schedule (`GET /times/{date}`): when a booking is added, to check that the movie is shown on that date.
+    - Movie (`GET /movies/{movieid}`): to return the bookings of a user with the movie details.
   version: "1.0.0"
 servers:
   - url: http://localhost:3201
@@ -36,6 +39,9 @@ paths:
       tags:
         - admin
       summary: Retrieve all bookings
+      description: |
+        Returns the bookings of every user. Meant for admins only,
+        but not protected yet (authentication still to be added).
       responses:
         "200":
           description: Bookings of every user
@@ -45,6 +51,17 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Booking"
+              example:
+                - userid: "chris_rivers"
+                  dates:
+                    - date: "20151201"
+                      movies: ["267eedb8-0f5d-42d5-8f43-72426b9fb3e6"]
+                - userid: "garret_heaton"
+                  dates:
+                    - date: "20151201"
+                      movies: ["267eedb8-0f5d-42d5-8f43-72426b9fb3e6"]
+                    - date: "20151202"
+                      movies: ["276c79ec-a26a-40a6-b3d3-fb242a5947b6"]
 
   /bookings/{userid}:
     get:
@@ -60,6 +77,11 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Booking"
+              example:
+                userid: "chris_rivers"
+                dates:
+                  - date: "20151201"
+                    movies: ["267eedb8-0f5d-42d5-8f43-72426b9fb3e6"]
         "404":
           $ref: "#/components/responses/NoBooking"
 
@@ -69,7 +91,7 @@ paths:
       summary: Add a booking for a user
       description: |
         Books a movie on a date for the user.
-        The Schedule service is called to check that the movie is shown on that date.
+        The Schedule service is called (`GET /times/{date}`) to check that the movie is shown on that date.
       parameters:
         - $ref: "#/components/parameters/UserId"
       requestBody:
@@ -187,6 +209,15 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/DetailedBooking"
+              example:
+                userid: "chris_rivers"
+                dates:
+                  - date: "20151201"
+                    movies:
+                      - id: "267eedb8-0f5d-42d5-8f43-72426b9fb3e6"
+                        title: "Creed"
+                        rating: 8.8
+                        director: "Ryan Coogler"
         "404":
           $ref: "#/components/responses/NoBooking"
         "503":

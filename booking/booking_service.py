@@ -46,7 +46,7 @@ def get_for_user(userid):
 def check_scheduled(date, movieid):
    """Raises ValidationError unless the Schedule service lists movieid on date."""
    try:
-      r = requests.get(f"{SCHEDULE_URL}/schedule/{date}", timeout=TIMEOUT)
+      r = requests.get(f"{SCHEDULE_URL}/times/{date}", timeout=TIMEOUT)
    except requests.RequestException:
       raise ServiceUnavailableError("schedule service unavailable")
    if r.status_code == 404 or (r.status_code == 200 and movieid not in r.json()["movies"]):
