@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: User Service API
-  description: Read operations are public. Write operations require an admin JWT (POST /login).
+  description: Read operations are public. Write operations require a JWT (POST /login) with role admin, except updating a user, which the user itself can also do.
   version: "1.0.0"
   contact:
     name: Rafael Baudry
@@ -112,10 +112,11 @@ paths:
           $ref: "#/components/responses/UserNotFound"
 
     put:
-      tags: [admin]
+      tags: [dev, admin]
       security:
         - bearerAuth: []
       summary: Update a user (partial update)
+      description: Requires a JWT of the user itself or of an admin. The role cannot be changed here (see PUT /users/{user_id}/{role}).
       requestBody:
         required: true
         content:
@@ -259,8 +260,6 @@ components:
           type: string
         last_active:
           type: integer
-        role:
-          type: string
 
     Error:
       type: object
