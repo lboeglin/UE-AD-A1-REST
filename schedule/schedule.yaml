@@ -1,0 +1,309 @@
+openapi: 3.0.3
+info:
+  title: Schedule Service API
+  description: |
+    API for browsing, adding, updating and deleting schedules.
+    Read operations are public. Write operations are open (no authentication for now).
+  version: "1.0.0"
+  contact:
+    name: Rafael Baudry
+    email: rafael.baudry@imt-atlantique.fr
+servers:
+  - url: http://localhost:3202
+    description: Local development server
+
+tags:
+  - name: admin
+    description: Secured Admin-only calls
+  - name: dev
+    description: Operations available to regular developers
+
+paths:
+  /:
+    get:
+      tags:
+        - dev
+      summary: Service home page
+      description: Returns an HTML welcome message.
+      responses:
+        "200":
+          description: HTML welcome message
+          content:
+            text/html:
+              schema:
+                type: string
+                example: "<h1 style='color:blue'>Welcome to the schedule service!</h1>"
+
+  /json:
+    get:
+      tags:
+        - dev
+      summary: Retrieve the full list of schedules
+      description: Returns the list of all available schedules.
+      responses:
+        "200":
+          description: List of schedules
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Schedule"
+
+  /times:
+    post:
+      tags:
+        - admin
+      summary: Add a new schedule
+      description: Adds a schedule for a specific date with a list of movie IDs.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScheduleInput"
+            example:
+              date: "20151206"
+              movies:
+                - "720d006c-3a57-4b6a-b18f-9b713b073f3c"
+                - "39ab85e5-5e8e-4dc5-afea-65dc368bd7ab"
+      responses:
+        "200":
+          description: Schedule added successfully, returns the created schedule
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Schedule"
+              example:
+                date: "20151206"
+                movies:
+                  - "720d006c-3a57-4b6a-b18f-9b713b073f3c"
+                  - "39ab85e5-5e8e-4dc5-afea-65dc368bd7ab"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /times/{date}:
+    get:
+      tags:
+        - dev
+      summary: Retrieve a schedule by date
+      description: Returns the schedule and list of movie IDs for a given date.
+      parameters:
+        - $ref: "#/components/parameters/Date"
+      responses:
+        "200":
+          description: Schedule found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Schedule"
+              example:
+                date: "20151130"
+                movies:
+                  - "720d006c-3a57-4b6a-b18f-9b713b073f3c"
+                  - "a8034f44-aee4-44cf-b32c-74cf452aaaae"
+                  - "39ab85e5-5e8e-4dc5-afea-65dc368bd7ab"
+        "404":
+          $ref: "#/components/responses/ScheduleNotFound"
+
+    post:
+      tags:
+        - admin
+      summary: Add movies to an existing schedule
+      description: Appends movie IDs to the schedule for the given date (duplicates are ignored).
+      parameters:
+        - $ref: "#/components/parameters/Date"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScheduleMovies"
+            example:
+              movies:
+                - "267eedb8-0f5d-42d5-8f43-72426b9fb3e6"
+      responses:
+        "200":
+          description: Movies added successfully, returns the updated schedule
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Schedule"
+              example:
+                date: "20151130"
+                movies:
+                  - "720d006c-3a57-4b6a-b18f-9b713b073f3c"
+                  - "a8034f44-aee4-44cf-b32c-74cf452aaaae"
+                  - "39ab85e5-5e8e-4dc5-afea-65dc368bd7ab"
+                  - "267eedb8-0f5d-42d5-8f43-72426b9fb3e6"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/ScheduleNotFound"
+
+    put:
+      tags:
+        - admin
+      summary: Update movies for a schedule
+      description: Replaces the movie list for the given date with the provided list.
+      parameters:
+        - $ref: "#/components/parameters/Date"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScheduleMovies"
+            example:
+              movies:
+                - "a8034f44-aee4-44cf-b32c-74cf452aaaae"
+                - "96798c08-d19b-4986-a05d-7da856efb697"
+      responses:
+        "200":
+          description: Schedule updated successfully, returns the updated schedule
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Schedule"
+              example:
+                date: "20151130"
+                movies:
+                  - "a8034f44-aee4-44cf-b32c-74cf452aaaae"
+                  - "96798c08-d19b-4986-a05d-7da856efb697"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/ScheduleNotFound"
+
+    delete:
+      tags:
+        - admin
+      summary: Delete a schedule
+      description: Deletes the schedule for the specified date, returns the deleted schedule.
+      parameters:
+        - $ref: "#/components/parameters/Date"
+      responses:
+        "200":
+          description: Schedule deleted, returns the deleted schedule
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Schedule"
+              example:
+                date: "20151130"
+                movies:
+                  - "720d006c-3a57-4b6a-b18f-9b713b073f3c"
+                  - "a8034f44-aee4-44cf-b32c-74cf452aaaae"
+                  - "39ab85e5-5e8e-4dc5-afea-65dc368bd7ab"
+        "404":
+          $ref: "#/components/responses/ScheduleNotFound"
+
+components:
+  parameters:
+    Date:
+      name: date
+      in: path
+      required: true
+      description: Date of the schedule in YYYYMMDD format
+      schema:
+        type: string
+      example: "20151130"
+
+  responses:
+    BadRequest:
+      description: Invalid request body
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: "'movies' must be a list of strings"
+    ScheduleNotFound:
+      description: Schedule not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: "time not found"
+    ScheduleConflict:
+      description: Schedule conflict
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: "schedule already exists"
+
+  schemas:
+    Schedule:
+      type: object
+      description: Representation of a schedule for a specific date.
+      properties:
+        date:
+          type: string
+          description: Date of the schedule in YYYYMMDD format
+          example: "20151130"
+        movies:
+          type: array
+          description: List of movie UUIDs scheduled for this date
+          items:
+            type: string
+            format: uuid
+            description: Unique identifier of a movie
+            example: "720d006c-3a57-4b6a-b18f-9b713b073f3c"
+          example:
+            - "720d006c-3a57-4b6a-b18f-9b713b073f3c"
+            - "a8034f44-aee4-44cf-b32c-74cf452aaaae"
+            - "39ab85e5-5e8e-4dc5-afea-65dc368bd7ab"
+      required:
+        - date
+        - movies
+
+    ScheduleInput:
+      type: object
+      description: Data needed to create a new schedule.
+      properties:
+        date:
+          type: string
+          description: Date of the schedule in YYYYMMDD format
+          example: "20151206"
+        movies:
+          type: array
+          description: List of movie UUIDs scheduled for this date
+          items:
+            type: string
+            format: uuid
+            description: Unique identifier of a movie
+            example: "720d006c-3a57-4b6a-b18f-9b713b073f3c"
+          example:
+            - "720d006c-3a57-4b6a-b18f-9b713b073f3c"
+            - "39ab85e5-5e8e-4dc5-afea-65dc368bd7ab"
+      required:
+        - date
+        - movies
+
+    ScheduleMovies:
+      type: object
+      description: List of movie IDs to update or append to a schedule.
+      properties:
+        movies:
+          type: array
+          description: List of movie UUIDs
+          items:
+            type: string
+            format: uuid
+            description: Unique identifier of a movie
+            example: "267eedb8-0f5d-42d5-8f43-72426b9fb3e6"
+          example:
+            - "267eedb8-0f5d-42d5-8f43-72426b9fb3e6"
+            - "7daf7208-be4d-4944-a3ae-c1c2f516f3e6"
+      required:
+        - movies
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "time not found"
