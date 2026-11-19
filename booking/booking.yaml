@@ -42,7 +42,13 @@ paths:
       description: |
         Returns the bookings of every user. Meant for admins only,
         but not protected yet (authentication still to be added).
+      security:
+        - bearerAuth: []
       responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "200":
           description: Bookings of every user
           content:
@@ -70,7 +76,13 @@ paths:
       summary: Retrieve the bookings of a user
       parameters:
         - $ref: "#/components/parameters/UserId"
+      security:
+        - bearerAuth: []
       responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "200":
           description: Bookings of the user
           content:
@@ -103,7 +115,13 @@ paths:
             example:
               date: "20151202"
               movieid: "a8034f44-aee4-44cf-b32c-74cf452aaaae"
+      security:
+        - bearerAuth: []
       responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "201":
           description: Booking added, returns all the bookings of the user
           content:
@@ -164,7 +182,13 @@ paths:
           schema:
             type: string
           example: "267eedb8-0f5d-42d5-8f43-72426b9fb3e6"
+      security:
+        - bearerAuth: []
       responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "200":
           description: Booking cancelled
           content:
@@ -202,7 +226,13 @@ paths:
         `title: null`.
       parameters:
         - $ref: "#/components/parameters/UserId"
+      security:
+        - bearerAuth: []
       responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "200":
           description: Detailed bookings
           content:
@@ -224,6 +254,12 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
   parameters:
     UserId:
       name: userid
@@ -235,6 +271,18 @@ components:
       example: "chris_rivers"
 
   responses:
+    Unauthorized:
+      description: Missing, invalid or expired token
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Forbidden:
+      description: Token belongs to another user and is not an admin (for GET /bookings, not an admin)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
     NoBooking:
       description: The user has no booking
       content:

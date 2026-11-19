@@ -67,7 +67,13 @@ paths:
               title: "Dune"
               rating: 8.1
               director: "Denis Villeneuve"
+      security:
+        - bearerAuth: []
       responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "201":
           description: Movie added successfully, returns it with its generated ID
           content:
@@ -114,7 +120,13 @@ paths:
               $ref: "#/components/schemas/MovieUpdate"
             example:
               rating: 8.5
+      security:
+        - bearerAuth: []
       responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "200":
           description: Movie updated successfully
           content:
@@ -132,7 +144,13 @@ paths:
       summary: Delete a movie
       parameters:
         - $ref: "#/components/parameters/MovieId"
+      security:
+        - bearerAuth: []
       responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "200":
           description: Movie deleted, returns the deleted movie
           content:
@@ -190,7 +208,11 @@ paths:
           schema:
             type: number
           example: 7.9
+      security:
+        - bearerAuth: []
       responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "200":
           description: Movie updated successfully
           content:
@@ -209,6 +231,12 @@ paths:
           $ref: "#/components/responses/MovieNotFound"
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
   parameters:
     MovieId:
       name: movieid
@@ -220,6 +248,18 @@ components:
       example: "267eedb8-0f5d-42d5-8f43-72426b9fb3e6"
 
   responses:
+    Unauthorized:
+      description: Missing, invalid or expired token
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Forbidden:
+      description: User is not an admin
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
     BadRequest:
       description: Invalid request body
       content:

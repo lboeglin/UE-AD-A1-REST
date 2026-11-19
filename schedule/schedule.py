@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify, make_response
+from jwt_utils import require_admin
 
 import schedule_service
 from schedule_service import ValidationError, NotFoundError, ConflictError
@@ -36,22 +37,26 @@ def get_time_bydate(date):
     return make_response(jsonify(schedule_service.get_by_date(date)), 200)
 
 @app.route("/times", methods=['POST'])
+@require_admin
 def add_time():
     req = request.get_json()
-    return schedule_service.add_time(req)
+    return make_response(jsonify(schedule_service.add_time(req)), 201)
 
 @app.route("/times/<date>", methods=['POST'])
+@require_admin
 def add_movies(date):
     req = request.get_json()
     return schedule_service.add_movies(date,req)
 
 @app.route("/times/<date>", methods=['PUT'])
+@require_admin
 def update_movies(date):
     req = request.get_json()
     return schedule_service.update_movies(date,req)
 
 
 @app.route("/times/<date>", methods=['DELETE'])
+@require_admin
 def delete_times(date):
     return schedule_service.delete_time(date)
 

@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify, make_response
+from jwt_utils import require_admin, require_self_or_admin
 import booking_service
 from booking_service import NotFoundError, ConflictError, ValidationError, ServiceUnavailableError, UpstreamError
 
@@ -35,23 +36,28 @@ def home():
    return "<h1 style='color:blue'>Welcome to the Booking service!</h1>"
 
 @app.route("/bookings", methods=['GET'])
+@require_admin
 def get_bookings():
    return make_response(jsonify(booking_service.get_all()), 200)
 
 @app.route("/bookings/<userid>", methods=['GET'])
+@require_self_or_admin
 def get_booking_for_user(userid):
    return make_response(jsonify(booking_service.get_for_user(userid)), 200)
 
 @app.route("/bookings/<userid>", methods=['POST'])
+@require_self_or_admin
 def add_booking_byuser(userid):
    booking = booking_service.add_booking(userid, request.get_json(silent=True))
    return make_response(jsonify(booking), 201)
 
 @app.route("/bookings/<userid>/<date>/<movieid>", methods=['DELETE'])
+@require_self_or_admin
 def delete_booking(userid, date, movieid):
    return make_response(jsonify(booking_service.delete_booking(userid, date, movieid)), 200)
 
 @app.route("/bookings/<userid>/movies", methods=['GET'])
+@require_self_or_admin
 def get_booking_movies(userid):
    return make_response(jsonify(booking_service.get_movies_for_user(userid)), 200)
 

@@ -27,7 +27,9 @@ def validate_fields(body, partial):
         raise ValidationError("'date' is required")
     if "date" in body and (not isinstance(body["date"], str) or not body["date"]):
         raise ValidationError("'date' must be a non-empty string")
-    if "movies" in body and not isinstance(body["movies"], list) and all(isinstance(item,str) for item in body["movies"] or not body["movies"]):
+    if "movies" not in body:
+        raise ValidationError("'movies' is required")
+    if not isinstance(body["movies"], list) or not all(isinstance(item, str) for item in body["movies"]):
         raise ValidationError("'movies' must be a list of strings")
 
 def get_all():
@@ -41,6 +43,8 @@ def get_by_date(date):
 
 def add_time(body):
     validate_fields(body, partial=False)
+    if any(time["date"] == body["date"] for time in times):
+        raise ConflictError("schedule already exists")
     time = {
         "date": body["date"],
         "movies": body["movies"],
@@ -58,14 +62,10 @@ def update_movies(date, body):
 
 def add_movies(date, body):
     time = get_by_date(date)
-    try:
-        for movie in body["movies"]:
-            if movie in time["movies"]:
-                pass
-            else:
-                time["movies"].append(movie)
-    except ValueError:
-        raise ValidationError("movie must be a string")
+    validate_fields(body, partial=True)
+    for movie in body["movies"]:
+        if movie not in time["movies"]:
+            time["movies"].append(movie)
     write(times)
     return time
 
