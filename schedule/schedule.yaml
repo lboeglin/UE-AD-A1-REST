@@ -3,7 +3,7 @@ info:
   title: Schedule Service API
   description: |
     API for browsing, adding, updating and deleting schedules.
-    Read operations are public. Write operations are open (no authentication for now).
+    Read operations are public. Write operations require an admin JWT (Bearer token).
   version: "1.0.0"
   contact:
     name: Rafael Baudry
@@ -74,7 +74,7 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
-        "200":
+        "201":
           description: Schedule added successfully, returns the created schedule
           content:
             application/json:
@@ -87,6 +87,8 @@ paths:
                   - "39ab85e5-5e8e-4dc5-afea-65dc368bd7ab"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "409":
+          $ref: "#/components/responses/ScheduleConflict"
 
   /times/{date}:
     get:

@@ -40,7 +40,7 @@ def get_time_bydate(date):
 @require_admin
 def add_time():
     req = request.get_json()
-    return schedule_service.add_time(req)
+    return make_response(jsonify(schedule_service.add_time(req)), 201)
 
 @app.route("/times/<date>", methods=['POST'])
 @require_admin
