@@ -224,6 +224,47 @@ paths:
         "404":
           $ref: "#/components/responses/ScheduleNotFound"
 
+  /times/{date}/movies:
+    get:
+      tags:
+        - dev
+      summary: Retrieve the program of a date with movie details
+      description: Calls Movie for the movie details.
+      parameters:
+        - $ref: "#/components/parameters/Date"
+      responses:
+        "200":
+          description: Detailed schedule
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DetailedSchedule"
+              example:
+                date: "20151130"
+                movies:
+                  - id: "720d006c-3a57-4b6a-b18f-9b713b073f3c"
+                    title: "The Good Dinosaur"
+                    rating: 7.4
+                    director: "Peter Sohn"
+                  - id: "a8034f44-aee4-44cf-b32c-74cf452aaaae"
+                    title: "The Martian"
+                    rating: 8.2
+                    director: "Ridley Scott"
+                  - id: "39ab85e5-5e8e-4dc5-afea-65dc368bd7ab"
+                    title: "Spectre"
+                    rating: 7.1
+                    director: "Sam Mendes"
+        "404":
+          $ref: "#/components/responses/ScheduleNotFound"
+        "503":
+          description: The Movie service is unreachable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: "movie service unavailable"
+
 components:
   securitySchemes:
     bearerAuth:
@@ -344,6 +385,36 @@ components:
             - "7daf7208-be4d-4944-a3ae-c1c2f516f3e6"
       required:
         - movies
+
+    Movie:
+      type: object
+      description: Movie details, as returned by the Movie service.
+      properties:
+        id:
+          type: string
+          example: "720d006c-3a57-4b6a-b18f-9b713b073f3c"
+        title:
+          type: string
+          nullable: true
+          example: "The Good Dinosaur"
+        rating:
+          type: number
+          example: 7.4
+        director:
+          type: string
+          example: "Peter Sohn"
+
+    DetailedSchedule:
+      type: object
+      description: Schedule of a date with full movie details.
+      properties:
+        date:
+          type: string
+          example: "20151130"
+        movies:
+          type: array
+          items:
+            $ref: "#/components/schemas/Movie"
 
     Error:
       type: object

@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify, make_response
 from jwt_utils import require_admin
 
 import schedule_service
-from schedule_service import ValidationError, NotFoundError, ConflictError
+from schedule_service import ValidationError, NotFoundError, ConflictError, ServiceUnavailableError
 
 app = Flask(__name__)
 
@@ -24,6 +24,10 @@ def handle_conflict(e):
 def handle_validation(e):
     return error(str(e), 400)
 
+@app.errorhandler(ServiceUnavailableError)
+def handle_service_unavailable(e):
+    return error(str(e), 503)
+
 @app.route("/", methods=['GET'])
 def home():
    return "<h1 style='color:blue'>Welcome to the schedule service!</h1>"
@@ -35,6 +39,10 @@ def get_json():
 @app.route("/times/<date>", methods=['GET'])
 def get_time_bydate(date):
     return make_response(jsonify(schedule_service.get_by_date(date)), 200)
+
+@app.route("/times/<date>/movies", methods=['GET'])
+def get_movies_bydate(date):
+    return make_response(jsonify(schedule_service.get_movies_by_date(date)), 200)
 
 @app.route("/times", methods=['POST'])
 @require_admin

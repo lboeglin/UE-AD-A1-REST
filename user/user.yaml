@@ -150,6 +150,61 @@ paths:
         "404":
           $ref: "#/components/responses/UserNotFound"
 
+  /users/{user_id}/bookings:
+    get:
+      tags: [dev, admin]
+      security:
+        - bearerAuth: []
+      summary: Retrieve a user with their detailed bookings
+      description: User itself or admin. Calls Booking (the token is forwarded).
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "200":
+          description: User with detailed bookings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserWithBookings"
+              example:
+                id: "chris_rivers"
+                name: "Chris Rivers"
+                last_active: 1360031010
+                role: "user"
+                bookings:
+                  - date: "20151201"
+                    movies:
+                      - id: "267eedb8-0f5d-42d5-8f43-72426b9fb3e6"
+                        title: "Creed"
+                        rating: 8.8
+                        director: "Ryan Coogler"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Token belongs to another user and is not an admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          $ref: "#/components/responses/UserNotFound"
+        "502":
+          description: The Booking service returned an unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: "booking service error"
+        "503":
+          description: The Booking service is unreachable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: "booking service unavailable"
+
   /users/{user_id}/{role}:
     put:
       tags: [admin]
@@ -237,6 +292,34 @@ components:
           type: string
           example: "user"
       required: [id, name]
+
+    UserWithBookings:
+      allOf:
+        - $ref: "#/components/schemas/User"
+        - type: object
+          properties:
+            bookings:
+              type: array
+              items:
+                type: object
+                properties:
+                  date:
+                    type: string
+                    example: "20151201"
+                  movies:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        title:
+                          type: string
+                          nullable: true
+                        rating:
+                          type: number
+                        director:
+                          type: string
 
     UserInput:
       type: object

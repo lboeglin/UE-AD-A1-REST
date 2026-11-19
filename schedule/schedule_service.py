@@ -1,7 +1,14 @@
 import json
 import os
+import requests
 
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "databases", "times.json")
+MOVIE_URL = os.environ.get("MOVIE_URL", "http://localhost:3200")
+TIMEOUT = 3
+
+class ServiceUnavailableError(Exception):
+    """Another service could not be reached."""
+    pass
 
 class NotFoundError(Exception):
     pass
@@ -74,3 +81,15 @@ def delete_time(date):
     times.remove(time)
     write(times)
     return time
+
+def get_movies_by_date(date):
+    """Schedule of a date with movie details (calls Movie)."""
+    time = get_by_date(date)
+    movies = []
+    try:
+        for movieid in time["movies"]:
+            r = requests.get(f"{MOVIE_URL}/movies/{movieid}", timeout=TIMEOUT)
+            movies.append(r.json() if r.status_code == 200 else {"id": movieid, "title": None})
+    except requests.RequestException:
+        raise ServiceUnavailableError("movie service unavailable")
+    return {"date": date, "movies": movies}
