@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify, make_response
+from jwt_utils import require_admin, require_auth
 import movie_service
 from movie_service import NotFoundError, ValidationError
 
@@ -36,20 +37,24 @@ def get_movie_bytitle():
     return make_response(jsonify(movie_service.get_by_title(request.args.get("title"))), 200)
 
 @app.route("/movies", methods=['POST'])
+@require_admin
 def add_movie():
     movie = movie_service.add_movie(request.get_json(silent=True))
     return make_response(jsonify(movie), 201)
 
 @app.route("/movies/<movieid>", methods=['PUT'])
+@require_admin
 def update_movie(movieid):
     movie = movie_service.update_movie(movieid, request.get_json(silent=True))
     return make_response(jsonify(movie), 200)
 
 @app.route("/movies/<movieid>/<rate>", methods=['PUT'])
+@require_auth
 def update_movie_rating(movieid, rate):
     return make_response(jsonify(movie_service.update_rating(movieid, rate)), 200)
 
 @app.route("/movies/<movieid>", methods=['DELETE'])
+@require_admin
 def delete_movie(movieid):
     return make_response(jsonify(movie_service.delete_movie(movieid)), 200)
 
