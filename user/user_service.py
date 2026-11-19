@@ -1,8 +1,19 @@
 import json
 import os
+import requests
 from jwt_utils import jwt_encode
 
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "databases", "users.json")
+BOOKING_URL = os.environ.get("BOOKING_URL", "http://localhost:3201")
+TIMEOUT = 3
+
+class ServiceUnavailableError(Exception):
+    """Another service could not be reached."""
+    pass
+
+class UpstreamError(Exception):
+    """Another service answered with an unexpected error."""
+    pass
 
 class NotFoundError(Exception):
     pass
@@ -98,3 +109,19 @@ def delete_user(userid):
     users.remove(user)
     write(users)
     return user
+
+def get_user_with_bookings(userid, auth_header):
+    """User with detailed bookings (calls Booking, forwards the token)."""
+    user = get_by_id(userid)
+    try:
+        r = requests.get(f"{BOOKING_URL}/bookings/{userid}/movies",
+                         headers={"Authorization": auth_header or ""}, timeout=TIMEOUT)
+    except requests.RequestException:
+        raise ServiceUnavailableError("booking service unavailable")
+    if r.status_code == 404:
+        dates = []
+    elif r.status_code == 200:
+        dates = r.json()["dates"]
+    else:
+        raise UpstreamError("booking service error")
+    return {**user, "bookings": dates}

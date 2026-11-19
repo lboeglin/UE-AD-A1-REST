@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify, make_response
 import user_service
 from jwt_utils import require_admin, require_self_or_admin
-from user_service import NotFoundError, ConflictError, ValidationError
+from user_service import NotFoundError, ConflictError, ValidationError, ServiceUnavailableError, UpstreamError
 
 app = Flask(__name__)
 
@@ -23,6 +23,14 @@ def handle_conflict(e):
 def handle_validation(e):
     return error(str(e), 400)
 
+@app.errorhandler(ServiceUnavailableError)
+def handle_service_unavailable(e):
+    return error(str(e), 503)
+
+@app.errorhandler(UpstreamError)
+def handle_upstream(e):
+    return error(str(e), 502)
+
 @app.route("/", methods=['GET'])
 def home():
     return make_response("<h1 style='color:blue'>Welcome to the User service!</h1>",200)
@@ -38,6 +46,12 @@ def login():
 @app.route("/users/<user_id>", methods=['GET'])
 def get_user_byid(user_id):
     return make_response(jsonify(user_service.get_by_id(user_id)), 200)
+
+@app.route("/users/<user_id>/bookings", methods=['GET'])
+@require_self_or_admin
+def get_user_bookings(user_id):
+    user = user_service.get_user_with_bookings(user_id, request.headers.get("Authorization"))
+    return make_response(jsonify(user), 200)
 
 @app.route("/users", methods=['POST'])
 @require_admin

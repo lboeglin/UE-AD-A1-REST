@@ -2,8 +2,8 @@ openapi: 3.0.3
 info:
   title: Movie Service API
   description: |
-    API for browsing, adding, updating and deleting movies.
-    Read operations are public. Write operations are open (no authentication for now).
+    Movie catalog. Reads are public, writes require an admin JWT (POST /login on the User service),
+    except rating a movie, which any logged-in user can do.
   version: "1.0.0"
   contact:
     name: Helene Coullon
@@ -160,6 +160,46 @@ paths:
         "404":
           $ref: "#/components/responses/MovieNotFound"
 
+  /movies/{movieid}/times:
+    get:
+      tags:
+        - dev
+      summary: Retrieve a movie with all its screening dates
+      description: Calls Schedule for the dates.
+      parameters:
+        - $ref: "#/components/parameters/MovieId"
+      responses:
+        "200":
+          description: Movie with its screening dates
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovieWithTimes"
+              example:
+                id: "267eedb8-0f5d-42d5-8f43-72426b9fb3e6"
+                title: "Creed"
+                rating: 8.8
+                director: "Ryan Coogler"
+                dates: ["20151201"]
+        "404":
+          $ref: "#/components/responses/MovieNotFound"
+        "502":
+          description: The Schedule service returned an unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: "schedule service error"
+        "503":
+          description: The Schedule service is unreachable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: "schedule service unavailable"
+
   /moviesbytitle:
     get:
       tags:
@@ -197,8 +237,9 @@ paths:
   /movies/{movieid}/{rate}:
     put:
       tags:
-        - admin
+        - dev
       summary: Update a movie's rating
+      description: Any logged-in user.
       parameters:
         - $ref: "#/components/parameters/MovieId"
         - name: rate
@@ -303,6 +344,18 @@ components:
       required:
         - id
         - title
+
+    MovieWithTimes:
+      allOf:
+        - $ref: "#/components/schemas/Movie"
+        - type: object
+          properties:
+            dates:
+              type: array
+              description: Dates (YYYYMMDD) on which the movie is scheduled
+              items:
+                type: string
+              example: ["20151201"]
 
     MovieInput:
       type: object

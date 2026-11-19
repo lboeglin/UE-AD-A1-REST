@@ -2,12 +2,9 @@ openapi: 3.0.3
 info:
   title: Booking Service API
   description: |
-    API managing the bookings of each user (dates and movies booked).
-    No authentication for now: every operation is open.
+    Bookings of each user. Requires a JWT (POST /login on the User service).
 
-    Calls to other services:
-    - Schedule (`GET /times/{date}`): when a booking is added, to check that the movie is shown on that date.
-    - Movie (`GET /movies/{movieid}`): to return the bookings of a user with the movie details.
+    Calls: Schedule (check a booking), Movie (movie details), User (user names).
   version: "1.0.0"
 servers:
   - url: http://localhost:3201
@@ -39,9 +36,7 @@ paths:
       tags:
         - admin
       summary: Retrieve all bookings
-      description: |
-        Returns the bookings of every user. Meant for admins only,
-        but not protected yet (authentication still to be added).
+      description: Admin only.
       security:
         - bearerAuth: []
       responses:
@@ -101,9 +96,7 @@ paths:
       tags:
         - dev
       summary: Add a booking for a user
-      description: |
-        Books a movie on a date for the user.
-        The Schedule service is called (`GET /times/{date}`) to check that the movie is shown on that date.
+      description: Calls Schedule to check that the movie is shown on that date.
       parameters:
         - $ref: "#/components/parameters/UserId"
       requestBody:
@@ -215,15 +208,54 @@ paths:
               example:
                 error: "booking not found"
 
+  /bookings/movie/{movieid}:
+    get:
+      tags:
+        - admin
+      summary: Retrieve who booked a movie
+      description: Admin only. Calls User for the names.
+      parameters:
+        - name: movieid
+          in: path
+          required: true
+          description: Unique identifier of the movie
+          schema:
+            type: string
+          example: "267eedb8-0f5d-42d5-8f43-72426b9fb3e6"
+      security:
+        - bearerAuth: []
+      responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "200":
+          description: Bookings of the movie
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovieBookings"
+              example:
+                movieid: "267eedb8-0f5d-42d5-8f43-72426b9fb3e6"
+                bookings:
+                  - userid: "chris_rivers"
+                    name: "Chris Rivers"
+                    date: "20151201"
+                  - userid: "garret_heaton"
+                    name: "Garret Heaton"
+                    date: "20151201"
+                  - userid: "dwight_schrute"
+                    name: "Dwight Schrute"
+                    date: "20151201"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
   /bookings/{userid}/movies:
     get:
       tags:
         - dev
       summary: Retrieve the bookings of a user with movie details
-      description: |
-        Same as `GET /bookings/{userid}`, but each movie ID is replaced by the movie details
-        fetched from the Movie service. A movie missing from the catalog is returned with
-        `title: null`.
+      description: Calls Movie for the movie details.
       parameters:
         - $ref: "#/components/parameters/UserId"
       security:
@@ -278,7 +310,7 @@ components:
           schema:
             $ref: "#/components/schemas/Error"
     Forbidden:
-      description: Token belongs to another user and is not an admin (for GET /bookings, not an admin)
+      description: Not the user itself nor an admin
       content:
         application/json:
           schema:
@@ -300,7 +332,7 @@ components:
           example:
             error: "schedule service error"
     ServiceUnavailable:
-      description: A called service (Schedule or Movie) is unreachable
+      description: A called service (Schedule, Movie or User) is unreachable
       content:
         application/json:
           schema:
@@ -379,6 +411,28 @@ components:
                 type: array
                 items:
                   $ref: "#/components/schemas/Movie"
+
+    MovieBookings:
+      type: object
+      properties:
+        movieid:
+          type: string
+          example: "267eedb8-0f5d-42d5-8f43-72426b9fb3e6"
+        bookings:
+          type: array
+          items:
+            type: object
+            properties:
+              userid:
+                type: string
+                example: "chris_rivers"
+              name:
+                type: string
+                nullable: true
+                example: "Chris Rivers"
+              date:
+                type: string
+                example: "20151201"
 
     Error:
       type: object

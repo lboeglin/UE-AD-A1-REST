@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify, make_response
 from jwt_utils import require_admin, require_auth
 import movie_service
-from movie_service import NotFoundError, ValidationError
+from movie_service import NotFoundError, ValidationError, ServiceUnavailableError, UpstreamError
 
 app = Flask(__name__)
 
@@ -19,6 +19,14 @@ def handle_not_found(e):
 def handle_validation(e):
     return error(str(e), 400)
 
+@app.errorhandler(ServiceUnavailableError)
+def handle_service_unavailable(e):
+    return error(str(e), 503)
+
+@app.errorhandler(UpstreamError)
+def handle_upstream(e):
+    return error(str(e), 502)
+
 # root message
 @app.route("/", methods=['GET'])
 def home():
@@ -31,6 +39,10 @@ def get_json():
 @app.route("/movies/<movieid>", methods=['GET'])
 def get_movie_byid(movieid):
     return make_response(jsonify(movie_service.get_by_id(movieid)), 200)
+
+@app.route("/movies/<movieid>/times", methods=['GET'])
+def get_movie_times(movieid):
+    return make_response(jsonify(movie_service.get_movie_with_times(movieid)), 200)
 
 @app.route("/moviesbytitle", methods=['GET'])
 def get_movie_bytitle():

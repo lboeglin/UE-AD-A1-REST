@@ -1,13 +1,24 @@
 import json
 import os
 import uuid
+import requests
 
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "databases", "movies.json")
+SCHEDULE_URL = os.environ.get("SCHEDULE_URL", "http://localhost:3202")
+TIMEOUT = 3
 
 class NotFoundError(Exception):
     pass
 
 class ValidationError(Exception):
+    pass
+
+class ServiceUnavailableError(Exception):
+    """Another service could not be reached."""
+    pass
+
+class UpstreamError(Exception):
+    """Another service answered with an unexpected error."""
     pass
 
 with open(DB_PATH, 'r') as jsf:
@@ -78,3 +89,15 @@ def delete_movie(movieid):
     movies.remove(movie)
     write(movies)
     return movie
+
+def get_movie_with_times(movieid):
+    """Movie with its screening dates (calls Schedule)."""
+    movie = get_by_id(movieid)
+    try:
+        r = requests.get(f"{SCHEDULE_URL}/json", timeout=TIMEOUT)
+    except requests.RequestException:
+        raise ServiceUnavailableError("schedule service unavailable")
+    if r.status_code != 200:
+        raise UpstreamError("schedule service error")
+    dates = [t["date"] for t in r.json() if movieid in t["movies"]]
+    return {**movie, "dates": dates}

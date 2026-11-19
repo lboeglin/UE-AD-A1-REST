@@ -4,6 +4,7 @@ import os
 
 SCHEDULE_URL = os.environ.get("SCHEDULE_URL", "http://localhost:3202")
 MOVIE_URL = os.environ.get("MOVIE_URL", "http://localhost:3200")
+USER_URL = os.environ.get("USER_URL", "http://localhost:3203")
 TIMEOUT = 3
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "databases", "bookings.json")
 
@@ -89,7 +90,7 @@ def delete_booking(userid, date, movieid):
    return {"userid": userid, "date": date, "movieid": movieid}
 
 def get_movies_for_user(userid):
-   """Returns the user's bookings with each movie id replaced by its details from the Movie service."""
+   """User's bookings with movie details (calls Movie)."""
    booking = get_for_user(userid)
    details = {}
    try:
@@ -102,3 +103,17 @@ def get_movies_for_user(userid):
       raise ServiceUnavailableError("movie service unavailable")
    dates = [{"date": d["date"], "movies": [details[m] for m in d["movies"]]} for d in booking["dates"]]
    return {"userid": userid, "dates": dates}
+
+def get_users_for_movie(movieid):
+   """Who booked movieid and when, with user names (calls User)."""
+   found = [(b["userid"], d["date"]) for b in bookings for d in b["dates"] if movieid in d["movies"]]
+   names = {}
+   try:
+      for userid, _ in found:
+         if userid not in names:
+            r = requests.get(f"{USER_URL}/users/{userid}", timeout=TIMEOUT)
+            names[userid] = r.json()["name"] if r.status_code == 200 else None
+   except requests.RequestException:
+      raise ServiceUnavailableError("user service unavailable")
+   return {"movieid": movieid,
+           "bookings": [{"userid": u, "name": names[u], "date": d} for u, d in found]}

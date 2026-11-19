@@ -40,6 +40,11 @@ def home():
 def get_bookings():
    return make_response(jsonify(booking_service.get_all()), 200)
 
+@app.route("/bookings/movie/<movieid>", methods=['GET'])
+@require_admin
+def get_bookings_for_movie(movieid):
+   return make_response(jsonify(booking_service.get_users_for_movie(movieid)), 200)
+
 @app.route("/bookings/<userid>", methods=['GET'])
 @require_self_or_admin
 def get_booking_for_user(userid):
