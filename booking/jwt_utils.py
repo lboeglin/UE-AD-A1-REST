@@ -8,7 +8,6 @@ from functools import wraps
 from flask import request, jsonify, make_response
 
 SECRET = os.environ.get("JWT_SECRET", "ohnothereisnosecret")
-EXPIRATION = 3600  # seconds
 
 def b64url_encode(data):
     return base64.urlsafe_b64encode(data).rstrip(b"=").decode()
@@ -18,12 +17,6 @@ def b64url_decode(s):
 
 def sign(message):
     return b64url_encode(hmac.new(SECRET.encode(), message.encode(), hashlib.sha256).digest())
-
-def jwt_encode(payload):
-    payload = {**payload, "exp": int(time.time()) + EXPIRATION}
-    header = b64url_encode(json.dumps({"alg": "HS256", "typ": "JWT"}).encode())
-    body = b64url_encode(json.dumps(payload).encode())
-    return f"{header}.{body}.{sign(f'{header}.{body}')}"
 
 def jwt_decode(token):
     """Returns the payload, or raises ValueError if the token is invalid or expired."""
