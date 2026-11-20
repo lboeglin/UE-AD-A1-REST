@@ -237,9 +237,8 @@ paths:
   /movies/{movieid}/{rate}:
     put:
       tags:
-        - dev
+        - admin
       summary: Update a movie's rating
-      description: Any logged-in user.
       parameters:
         - $ref: "#/components/parameters/MovieId"
         - name: rate
@@ -254,6 +253,8 @@ paths:
       responses:
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "200":
           description: Movie updated successfully
           content:

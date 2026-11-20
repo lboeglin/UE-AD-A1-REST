@@ -58,17 +58,6 @@ def require_admin(f):
         return f(*args, **kwargs)
     return wrapper
 
-def require_auth(f):
-    """Route decorator: requires any valid 'Authorization: Bearer <token>'."""
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        try:
-            payload_from_request()
-        except ValueError as e:
-            return make_response(jsonify({"error": str(e)}), 401)
-        return f(*args, **kwargs)
-    return wrapper
-
 def require_self_or_admin(f):
     """Route decorator: token of current user must match <user_id> (or <userid>) or be 'admin'."""
     @wraps(f)

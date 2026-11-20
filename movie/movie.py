@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, make_response
-from jwt_utils import require_admin, require_auth
+from jwt_utils import require_admin
 import movie_service
 from movie_service import NotFoundError, ValidationError, ServiceUnavailableError, UpstreamError
 
@@ -61,7 +61,7 @@ def update_movie(movieid):
     return make_response(jsonify(movie), 200)
 
 @app.route("/movies/<movieid>/<rate>", methods=['PUT'])
-@require_auth
+@require_admin
 def update_movie_rating(movieid, rate):
     return make_response(jsonify(movie_service.update_rating(movieid, rate)), 200)
 
