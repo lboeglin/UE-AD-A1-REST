@@ -1,0 +1,55 @@
+type Query {
+    "All bookings. Admin only."
+    bookings: [Booking]
+    "Bookings of one user. The user themself or an admin."
+    booking_with_userid(_userid: String!): Booking
+    "Users who booked a movie, with their names (calls User). Admin only."
+    bookings_for_movie(_movieid: String!): MovieBookings
+}
+
+type Mutation {
+    "Books a movie for a user. The movie must be scheduled on that date (calls Schedule). The user themself or an admin."
+    add_booking(_userid: String!, _date: String!, _movieid: String!): Booking
+    "Cancels a booking. The user themself or an admin."
+    delete_booking(_userid: String!, _date: String!, _movieid: String!): DeletedBooking
+}
+
+"All bookings of a user, grouped by date."
+type Booking {
+    userid: String!
+    dates: [DateBooking]
+}
+
+"Movies booked by a user on one date (format YYYYMMDD)."
+type DateBooking {
+    date: String!
+    "Ids of the booked movies."
+    movies: [String!]
+    "Details of the booked movies (calls Movie)."
+    movies_details: [Movie]
+}
+
+type Movie {
+    id: String!
+    title: String
+    director: String
+    rating: Float
+}
+
+"The booking that was cancelled."
+type DeletedBooking {
+    userid: String!
+    date: String!
+    movieid: String!
+}
+
+type MovieBookings {
+    movieid: String!
+    bookings: [UserBooking]
+}
+
+type UserBooking {
+    userid: String!
+    name: String
+    date: String!
+}

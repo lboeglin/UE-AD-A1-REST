@@ -1,70 +1,37 @@
+import os
+from ariadne import graphql_sync, make_executable_schema, load_schema_from_path, ObjectType, QueryType, MutationType
 from flask import Flask, request, jsonify, make_response
-from jwt_utils import require_admin, require_self_or_admin
-import booking_service
-from booking_service import NotFoundError, ConflictError, ValidationError, ServiceUnavailableError, UpstreamError
-
-app = Flask(__name__)
+import resolvers as r
 
 PORT = 3201
 HOST = '0.0.0.0'
+app = Flask(__name__)
 
-def error(message, code):
-   return make_response(jsonify({"error": message}), code)
+type_defs = load_schema_from_path(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'booking.graphql'))
 
-@app.errorhandler(NotFoundError)
-def handle_not_found(e):
-   return error(str(e), 404)
+query = QueryType()
+query.set_field('bookings', r.bookings)
+query.set_field('booking_with_userid', r.booking_with_userid)
+query.set_field('bookings_for_movie', r.bookings_for_movie)
 
-@app.errorhandler(ConflictError)
-def handle_conflict(e):
-   return error(str(e), 409)
+mutation = MutationType()
+mutation.set_field('add_booking', r.add_booking)
+mutation.set_field('delete_booking', r.delete_booking)
 
-@app.errorhandler(ValidationError)
-def handle_validation(e):
-   return error(str(e), 400)
+date_booking = ObjectType('DateBooking')
+date_booking.set_field('movies_details', r.resolve_movies_details)
 
-@app.errorhandler(ServiceUnavailableError)
-def handle_service_unavailable(e):
-   return error(str(e), 503)
-
-@app.errorhandler(UpstreamError)
-def handle_upstream(e):
-   return error(str(e), 502)
+schema = make_executable_schema(type_defs, query, mutation, date_booking)
 
 @app.route("/", methods=['GET'])
 def home():
-   return "<h1 style='color:blue'>Welcome to the Booking service!</h1>"
+   return make_response("<h1 style='color:blue'>Welcome to the Booking service!</h1>", 200)
 
-@app.route("/bookings", methods=['GET'])
-@require_admin
-def get_bookings():
-   return make_response(jsonify(booking_service.get_all()), 200)
-
-@app.route("/bookings/movie/<movieid>", methods=['GET'])
-@require_admin
-def get_bookings_for_movie(movieid):
-   return make_response(jsonify(booking_service.get_users_for_movie(movieid)), 200)
-
-@app.route("/bookings/<userid>", methods=['GET'])
-@require_self_or_admin
-def get_booking_for_user(userid):
-   return make_response(jsonify(booking_service.get_for_user(userid)), 200)
-
-@app.route("/bookings/<userid>", methods=['POST'])
-@require_self_or_admin
-def add_booking_byuser(userid):
-   booking = booking_service.add_booking(userid, request.get_json(silent=True))
-   return make_response(jsonify(booking), 201)
-
-@app.route("/bookings/<userid>/<date>/<movieid>", methods=['DELETE'])
-@require_self_or_admin
-def delete_booking(userid, date, movieid):
-   return make_response(jsonify(booking_service.delete_booking(userid, date, movieid)), 200)
-
-@app.route("/bookings/<userid>/movies", methods=['GET'])
-@require_self_or_admin
-def get_booking_movies(userid):
-   return make_response(jsonify(booking_service.get_movies_for_user(userid)), 200)
+@app.route('/graphql', methods=['POST'])
+def graphql_server():
+   data = request.get_json()
+   success, result = graphql_sync(schema, data, context_value={"request": request}, debug=app.debug)
+   return make_response(jsonify(result), 200 if success else 400)
 
 if __name__ == "__main__":
    print("Server running in port %s"%(PORT))

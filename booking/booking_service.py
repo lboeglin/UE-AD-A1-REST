@@ -55,11 +55,7 @@ def check_scheduled(date, movieid):
    if r.status_code != 200:
       raise UpstreamError("schedule service error")
 
-def add_booking(userid, body):
-   if (not isinstance(body, dict) or not isinstance(body.get("date"), str)
-         or not isinstance(body.get("movieid"), str)):
-      raise ValidationError("body must be a JSON object with 'date' and 'movieid' strings")
-   date, movieid = body["date"], body["movieid"]
+def add_booking(userid, date, movieid):
    check_scheduled(date, movieid)
 
    booking = find_booking(userid)
@@ -89,20 +85,18 @@ def delete_booking(userid, date, movieid):
    write(bookings)
    return {"userid": userid, "date": date, "movieid": movieid}
 
-def get_movies_for_user(userid):
-   """User's bookings with movie details (calls Movie)."""
-   booking = get_for_user(userid)
-   details = {}
+MOVIE_QUERY = """query ($id: String!) {
+   movie_with_id(_id: $id) { id title director rating }
+}"""
+
+def get_movie(movieid, auth_header):
    try:
-      for day in booking["dates"]:
-         for movieid in day["movies"]:
-            if movieid not in details:
-               r = requests.get(f"{MOVIE_URL}/movies/{movieid}", timeout=TIMEOUT)
-               details[movieid] = r.json() if r.status_code == 200 else {"id": movieid, "title": None}
+      r = requests.post(f"{MOVIE_URL}/graphql", json={"query": MOVIE_QUERY, "variables": {"id": movieid}},
+                        headers={"Authorization": auth_header}, timeout=TIMEOUT)
    except requests.RequestException:
       raise ServiceUnavailableError("movie service unavailable")
-   dates = [{"date": d["date"], "movies": [details[m] for m in d["movies"]]} for d in booking["dates"]]
-   return {"userid": userid, "dates": dates}
+   movie = (r.json().get("data") or {}).get("movie_with_id") if r.status_code == 200 else None
+   return movie or {"id": movieid, "title": None}
 
 def get_users_for_movie(movieid):
    """Who booked movieid and when, with user names (calls User)."""

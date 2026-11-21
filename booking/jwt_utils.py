@@ -4,8 +4,6 @@ import hmac
 import json
 import os
 import time
-from functools import wraps
-from flask import request, jsonify, make_response
 
 SECRET = os.environ.get("JWT_SECRET", "ohnothereisnosecret")
 
@@ -31,35 +29,21 @@ def jwt_decode(token):
         raise ValueError("token expired")
     return payload
 
-def payload_from_request():
-    """Reads 'Authorization: Bearer <token>' and returns the verified payload (raises ValueError)."""
-    auth = request.headers.get("Authorization", "")
+def token_payload(req):
+    auth = req.headers.get("Authorization", "")
     if not auth.startswith("Bearer "):
-        raise ValueError("missing token")
-    return jwt_decode(auth[len("Bearer "):])
+        raise PermissionError("missing token")
+    try:
+        return jwt_decode(auth[len("Bearer "):])
+    except ValueError as e:
+        raise PermissionError(str(e))
 
-def require_admin(f):
-    """Route decorator: requires 'Authorization: Bearer <token>' with role 'admin'."""
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        try:
-            payload = payload_from_request()
-        except ValueError as e:
-            return make_response(jsonify({"error": str(e)}), 401)
-        if payload.get("role") != "admin":
-            return make_response(jsonify({"error": "admin role required"}), 403)
-        return f(*args, **kwargs)
-    return wrapper
+def check_admin(req):
+    payload = token_payload(req)
+    if payload.get("role") != "admin":
+        raise PermissionError("admin role required")
 
-def require_self_or_admin(f):
-    """Route decorator: token of current user must match <user_id> (or <userid>) or be 'admin'."""
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        try:
-            payload = payload_from_request()
-        except ValueError as e:
-            return make_response(jsonify({"error": str(e)}), 401)
-        if payload.get("role") != "admin" and payload.get("sub") != kwargs.get("user_id", kwargs.get("userid")):
-            return make_response(jsonify({"error": "forbidden"}), 403)
-        return f(*args, **kwargs)
-    return wrapper
+def check_self_or_admin(req, userid):
+    payload = token_payload(req)
+    if payload.get("role") != "admin" and payload.get("sub") != userid:
+        raise PermissionError("forbidden")
