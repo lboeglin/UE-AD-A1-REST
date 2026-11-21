@@ -48,7 +48,7 @@ def graphql_server():
     success, result = graphql_sync(
         schema,
         data,
-        context_value=request, # Pour gérer les permissions on doit ajouter la requete
+        context_value={"request": request},
         debug=app.debug
     )
     status_code = 200 if success else 400

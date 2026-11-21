@@ -85,8 +85,8 @@ def delete_booking(userid, date, movieid):
    write(bookings)
    return {"userid": userid, "date": date, "movieid": movieid}
 
-MOVIE_QUERY = """query ($id: String!) {
-   movie_with_id(_id: $id) { id title director rating }
+MOVIE_QUERY = """query ($id: ID!) {
+   movie_with_id(id: $id) { id title director rating }
 }"""
 
 def get_movie(movieid, auth_header):
