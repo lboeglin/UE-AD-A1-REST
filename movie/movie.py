@@ -1,74 +1,59 @@
+from ariadne import graphql_sync, make_executable_schema, load_schema_from_path, ObjectType, QueryType, MutationType
 from flask import Flask, request, jsonify, make_response
-from jwt_utils import require_admin
-import movie_service
-from movie_service import NotFoundError, ValidationError, ServiceUnavailableError, UpstreamError
+
+import resolvers as r
 
 app = Flask(__name__)
 
 PORT = 3200
 HOST = '0.0.0.0'
 
-def error(message, code):
-    return make_response(jsonify({"error": message}), code)
+type_defs = load_schema_from_path('movie.graphql')
+query = QueryType()
+mutation = MutationType()
+movie = ObjectType('Movie')
+actor = ObjectType('Actor')
 
-@app.errorhandler(NotFoundError)
-def handle_not_found(e):
-    return error(str(e), 404)
+query.set_field('movie_with_id', r.movie_with_id)
+query.set_field('all_movies', r.all_movies)
+query.set_field('movie_with_title', r.movie_with_title)
 
-@app.errorhandler(ValidationError)
-def handle_validation(e):
-    return error(str(e), 400)
+query.set_field('all_actors', r.all_actors)
+query.set_field('actor_with_id', r.actor_with_id)
+query.set_field('actors_by_movie', r.actors_by_movie)
 
-@app.errorhandler(ServiceUnavailableError)
-def handle_service_unavailable(e):
-    return error(str(e), 503)
+mutation.set_field('add_movie',r.add_movie)
+mutation.set_field('update_movie',r.update_movie)
+mutation.set_field('del_movie',r.del_movie)
 
-@app.errorhandler(UpstreamError)
-def handle_upstream(e):
-    return error(str(e), 502)
+mutation.set_field('add_actor',r.add_actor)
+mutation.set_field('update_actor',r.update_actor)
+mutation.set_field('del_actor',r.del_actor)
+
+movie.set_field('actors', r.resolve_actors_in_movie)
+movie.set_field('times', r.resolve_times_in_movie)
+actor.set_field('films', r.resolve_movies_in_actor)
+
+schema = make_executable_schema(type_defs, movie,actor,query,mutation)
 
 # root message
 @app.route("/", methods=['GET'])
 def home():
     return make_response("<h1 style='color:blue'>Welcome to the Movie service!</h1>",200)
 
-@app.route("/json", methods=['GET'])
-def get_json():
-    return make_response(jsonify(movie_service.get_all()), 200)
+# graphql entry points
+@app.route('/graphql', methods=['POST'])
+def graphql_server():
+    data = request.get_json()
+    success, result = graphql_sync(
+        schema,
+        data,
+        context_value=request, # Pour gérer les permissions on doit ajouter la requete
+        debug=app.debug
+    )
+    status_code = 200 if success else 400
+    return jsonify(result), status_code
 
-@app.route("/movies/<movieid>", methods=['GET'])
-def get_movie_byid(movieid):
-    return make_response(jsonify(movie_service.get_by_id(movieid)), 200)
-
-@app.route("/movies/<movieid>/times", methods=['GET'])
-def get_movie_times(movieid):
-    return make_response(jsonify(movie_service.get_movie_with_times(movieid)), 200)
-
-@app.route("/moviesbytitle", methods=['GET'])
-def get_movie_bytitle():
-    return make_response(jsonify(movie_service.get_by_title(request.args.get("title"))), 200)
-
-@app.route("/movies", methods=['POST'])
-@require_admin
-def add_movie():
-    movie = movie_service.add_movie(request.get_json(silent=True))
-    return make_response(jsonify(movie), 201)
-
-@app.route("/movies/<movieid>", methods=['PUT'])
-@require_admin
-def update_movie(movieid):
-    movie = movie_service.update_movie(movieid, request.get_json(silent=True))
-    return make_response(jsonify(movie), 200)
-
-@app.route("/movies/<movieid>/<rate>", methods=['PUT'])
-@require_admin
-def update_movie_rating(movieid, rate):
-    return make_response(jsonify(movie_service.update_rating(movieid, rate)), 200)
-
-@app.route("/movies/<movieid>", methods=['DELETE'])
-@require_admin
-def delete_movie(movieid):
-    return make_response(jsonify(movie_service.delete_movie(movieid)), 200)
 
 if __name__ == "__main__":
     print("Server running in port %s"%(PORT))
