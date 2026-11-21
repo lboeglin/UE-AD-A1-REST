@@ -94,10 +94,9 @@ def get_movie_with_times(movieid):
     """Movie with its screening dates (calls Schedule)."""
     movie = get_by_id(movieid)
     try:
-        r = requests.get(f"{SCHEDULE_URL}/json", timeout=TIMEOUT)
+        r = requests.get(f"{SCHEDULE_URL}/movies/{movieid}/times", timeout=TIMEOUT)
     except requests.RequestException:
         raise ServiceUnavailableError("schedule service unavailable")
     if r.status_code != 200:
         raise UpstreamError("schedule service error")
-    dates = [t["date"] for t in r.json() if movieid in t["movies"]]
-    return {**movie, "dates": dates}
+    return {**movie, "dates": r.json()["dates"]}

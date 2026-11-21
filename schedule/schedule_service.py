@@ -42,6 +42,9 @@ def validate_fields(body, partial):
 def get_all():
     return times
 
+def get_dates_for_movie(movieid):
+    return {"movieid": movieid, "dates": [time["date"] for time in times if movieid in time["movies"]]}
+
 def get_by_date(date):
     for time in times:
         if time["date"]==date:

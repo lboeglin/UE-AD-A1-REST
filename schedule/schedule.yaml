@@ -50,6 +50,31 @@ paths:
                 items:
                   $ref: "#/components/schemas/Schedule"
 
+  /movies/{movieid}/times:
+    get:
+      tags:
+        - dev
+      summary: Retrieve the screening dates of a movie
+      description: Returns the dates on which the movie is scheduled (empty list if none). Used by Movie for the `times` field.
+      parameters:
+        - name: movieid
+          in: path
+          required: true
+          description: Id of the movie
+          schema:
+            type: string
+          example: "720d006c-3a57-4b6a-b18f-9b713b073f3c"
+      responses:
+        "200":
+          description: Screening dates of the movie
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovieDates"
+              example:
+                movieid: "720d006c-3a57-4b6a-b18f-9b713b073f3c"
+                dates: ["20151130", "20151201"]
+
   /times:
     post:
       tags:
@@ -415,6 +440,19 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Movie"
+
+    MovieDates:
+      type: object
+      description: Screening dates of a movie.
+      properties:
+        movieid:
+          type: string
+          example: "720d006c-3a57-4b6a-b18f-9b713b073f3c"
+        dates:
+          type: array
+          items:
+            type: string
+          example: ["20151130", "20151201"]
 
     Error:
       type: object
