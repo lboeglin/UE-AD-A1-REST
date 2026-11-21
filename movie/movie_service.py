@@ -1,25 +1,14 @@
 import json
 import os
 import uuid
+
 import requests
+
+from errors import ValidationError, NotFoundError, ServiceUnavailableError, UpstreamError
 
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "databases", "movies.json")
 SCHEDULE_URL = os.environ.get("SCHEDULE_URL", "http://localhost:3202")
 TIMEOUT = 3
-
-class NotFoundError(Exception):
-    pass
-
-class ValidationError(Exception):
-    pass
-
-class ServiceUnavailableError(Exception):
-    """Another service could not be reached."""
-    pass
-
-class UpstreamError(Exception):
-    """Another service answered with an unexpected error."""
-    pass
 
 with open(DB_PATH, 'r') as jsf:
     movies = json.load(jsf)["movies"]
@@ -75,29 +64,24 @@ def update_movie(movieid, body):
     write(movies)
     return movie
 
-def update_rating(movieid, rate):
-    movie = get_by_id(movieid)
-    try:
-        movie["rating"] = float(rate)
-    except ValueError:
-        raise ValidationError("rate must be a number")
-    write(movies)
-    return movie
-
 def delete_movie(movieid):
     movie = get_by_id(movieid)
     movies.remove(movie)
     write(movies)
     return movie
 
-def get_movie_with_times(movieid):
+# Ici pour graphQl cela me semble plus simple de renvoyer uniquement les dates et de laisser le resolver faire tout au propre.
+def get_movie_times(movieid):
     """Movie with its screening dates (calls Schedule)."""
-    movie = get_by_id(movieid)
     try:
         r = requests.get(f"{SCHEDULE_URL}/json", timeout=TIMEOUT)
     except requests.RequestException:
         raise ServiceUnavailableError("schedule service unavailable")
     if r.status_code != 200:
         raise UpstreamError("schedule service error")
-    dates = [t["date"] for t in r.json() if movieid in t["movies"]]
-    return {**movie, "dates": dates}
+    return [t["date"] for t in r.json() if movieid in t["movies"]]
+
+# Pour graphQL, si on supprime un movie et que le resolver d'actors à besoin du film supprimer faut lui dire que l'id n'existe plus.
+def get_by_ids(movie_ids):
+    id_set = set(movie_ids)
+    return [m for m in movies if m["id"] in id_set]
