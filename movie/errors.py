@@ -1,19 +1,11 @@
 """
-File used by movie_service, actor_service and jwt_utils to share the same exceptions.
+File used by movie_service and actor_service to share the same exceptions.
 """
 
 class NotFoundError(Exception):
     pass
 
 class ValidationError(Exception):
-    pass
-
-class UnauthorizedError(Exception):
-    """The Bearer token is missing."""
-    pass
-
-class ForbiddenError(Exception):
-    """The user does not have required right"""
     pass
 
 class ServiceUnavailableError(Exception):

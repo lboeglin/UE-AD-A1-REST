@@ -1,21 +1,22 @@
 type Query {
     all_movies: [Movie]!
-    movie_with_id(id: ID!): Movie
-    movie_with_title(title: String!): [Movie]!
+    movie_with_id(_id: ID!): Movie
+    movies_with_ids(_ids: [ID!]!): [Movie]!
+    movie_with_title(_title: String!): [Movie]!
 
     all_actors: [Actor]!
-    actor_with_id(id: ID!): Actor
-    actors_by_movie(movieid: ID!): [Actor]!
+    actor_with_id(_id: ID!): Actor
+    actors_by_movie(_movieid: ID!): [Actor]!
 }
 
 type Mutation {
-    add_movie(movieinput: MovieInput!): Movie
-    update_movie(id: ID!, movieinput: MovieInput!): Movie
-    del_movie(id: ID!): Movie
+    add_movie(_movieinput: MovieCreateInput!): Movie
+    update_movie(_id: ID!, _movieinput: MovieUpdateInput!): Movie
+    del_movie(_id: ID!): Movie
 
-    add_actor(actorinput: ActorInput!): Actor
-    update_actor(id: ID!, actorinput: ActorInput!): Actor
-    del_actor(id: ID!): Actor
+    add_actor(_actorinput: ActorCreateInput!): Actor
+    update_actor(_id: ID!, _actorinput: ActorUpdateInput!): Actor
+    del_actor(_id: ID!): Actor
 }
 
 
@@ -37,13 +38,26 @@ type Actor {
 }
 
 
-input MovieInput {
+input MovieCreateInput {
+    title: String!
+    director: String
+    rating: Float
+}
+
+input MovieUpdateInput {
     title: String
     director: String
     rating: Float
 }
 
-input ActorInput {
+input ActorCreateInput {
+    firstname: String!
+    lastname: String!
+    birthyear: Int
+    films: [ID]
+}
+
+input ActorUpdateInput {
     firstname: String
     lastname: String
     birthyear: Int

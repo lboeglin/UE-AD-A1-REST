@@ -15,6 +15,7 @@ movie = ObjectType('Movie')
 actor = ObjectType('Actor')
 
 query.set_field('movie_with_id', r.movie_with_id)
+query.set_field('movies_with_ids', r.movies_with_ids)
 query.set_field('all_movies', r.all_movies)
 query.set_field('movie_with_title', r.movie_with_title)
 
@@ -48,7 +49,7 @@ def graphql_server():
     success, result = graphql_sync(
         schema,
         data,
-        context_value=request, # Pour gérer les permissions on doit ajouter la requete
+        context_value={"request": request},
         debug=app.debug
     )
     status_code = 200 if success else 400

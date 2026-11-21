@@ -1,0 +1,59 @@
+type Query {
+    "All bookings. Admin only."
+    bookings: [Booking]
+    "Bookings of one user. The user themself or an admin."
+    booking_with_userid(_userid: ID!): Booking
+    "Users who booked a movie, with their names (calls User). Admin only."
+    bookings_for_movie(_movieid: ID!): MovieBookings
+}
+
+type Mutation {
+    "Books a movie for a user on a date (format YYYYMMDD). The movie must be scheduled on that date (calls Schedule). The user themself or an admin."
+    add_booking(_userid: ID!, _date: String!, _movieid: ID!): Booking
+    "Cancels a booking (date format YYYYMMDD). The user themself or an admin."
+    delete_booking(_userid: ID!, _date: String!, _movieid: ID!): DeletedBooking
+}
+
+"All bookings of a user, grouped by date."
+type Booking {
+    userid: ID!
+    dates: [DateBooking]
+}
+
+"Movies booked by a user on one date (format YYYYMMDD)."
+type DateBooking {
+    date: String!
+    "Ids of the booked movies."
+    movies: [ID!]
+    "Details of the booked movies (calls Movie), in the same order as movies; null for a movie that no longer exists."
+    movies_details: [Movie]
+}
+
+"Movie details returned by the Movie service."
+type Movie {
+    id: ID!
+    title: String
+    director: String
+    rating: Float
+}
+
+"The booking that was cancelled."
+type DeletedBooking {
+    userid: ID!
+    date: String!
+    movieid: ID!
+}
+
+"Bookings of a movie."
+type MovieBookings {
+    movieid: ID!
+    bookings: [UserBooking]
+}
+
+"A user who booked the movie, with the date."
+type UserBooking {
+    userid: ID!
+    "Name of the user (calls User); null if the user no longer exists."
+    name: String
+    date: String!
+}

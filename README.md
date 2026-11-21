@@ -30,8 +30,8 @@ Les appels entre services se font avec le package `requests`.
 
 | Service  | Port | Documentation |
 |----------|------|---------------|
-| Movie    | 3200 | `movie/movie.yaml` |
-| Booking  | 3201 | `booking/booking.yaml` |
+| Movie    | 3200 | `movie/movie.graphql` (GraphQL, `POST /graphql`) |
+| Booking  | 3201 | `booking/booking.graphql` (GraphQL, `POST /graphql`) |
 | Schedule | 3202 | `schedule/schedule.yaml` |
 | User     | 3203 | `user/user.yaml` |
 
@@ -57,18 +57,18 @@ flowchart TD
     Movie
 
     Client -->|REST| User
-    Client -->|REST| Booking
+    Client -->|GraphQL| Booking
     Client -->|REST| Schedule
-    Client -->|REST| Movie
+    Client -->|GraphQL| Movie
 
-    Booking -->|REST| Movie
+    Booking -->|GraphQL| Movie
     Booking -->|REST| Schedule
 
-    Booking <-.->|REST| User
-    Movie <-.->|REST| Schedule
+    Booking <-.->|REST / GraphQL| User
+    Movie <-.->|REST / GraphQL| Schedule
 ```
 
 Par rapport au schéma d'origine, nous avons ajouté les flèches en pointillés :
 
-- **Movie ↔ Schedule** : un film avec ses dates de diffusion (`GET /movies/<movieid>/times`), et le programme d'une date avec le détail des films (`GET /times/<date>/movies`).
-- **User ↔ Booking** : un utilisateur avec ses réservations détaillées (`GET /users/<user_id>/bookings`), et la liste des personnes ayant réservé un film (`GET /bookings/movie/<movieid>`).
+- **Movie ↔ Schedule** : un film avec ses dates de diffusion (champ GraphQL `times` du type `Movie`, qui interroge Schedule via `GET /movies/<movieid>/times`), et le programme d'une date avec le détail des films (`GET /times/<date>/movies`, qui interroge Movie en GraphQL).
+- **User ↔ Booking** : un utilisateur avec ses réservations détaillées (`GET /users/<user_id>/bookings`, qui interroge Booking en GraphQL), et la liste des personnes ayant réservé un film (requête GraphQL `bookings_for_movie` sur Booking).

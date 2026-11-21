@@ -17,12 +17,8 @@ def write(movies):
     with open(DB_PATH, 'w') as f:
         json.dump({"movies": movies}, f, indent=2)
 
-def validate_fields(body, partial):
+def validate_fields(body):
     """Raises ValidationError for invalid movie fields."""
-    if not isinstance(body, dict):
-        raise ValidationError("body must be a JSON object")
-    if not partial and "title" not in body:
-        raise ValidationError("'title' is required")
     if "title" in body and (not isinstance(body["title"], str) or not body["title"]):
         raise ValidationError("'title' must be a non-empty string")
     if "director" in body and not isinstance(body["director"], str):
@@ -40,15 +36,10 @@ def get_by_id(movieid):
     return movie
 
 def get_by_title(title):
-    if not title:
-        raise ValidationError("missing 'title' query parameter")
-    matches = [m for m in movies if m["title"] == title]
-    if not matches:
-        raise NotFoundError("movie not found")
-    return matches
+    return [m for m in movies if m["title"] == title]
 
 def add_movie(body):
-    validate_fields(body, partial=False)
+    validate_fields(body)
     movie = {"id": str(uuid.uuid4()), "title": body["title"],
              "rating": body.get("rating", 0), "director": body.get("director", "")}
     movies.append(movie)
@@ -57,7 +48,7 @@ def add_movie(body):
 
 def update_movie(movieid, body):
     movie = get_by_id(movieid)
-    validate_fields(body, partial=True)
+    validate_fields(body)
     for field in ("title", "rating", "director"):
         if field in body:
             movie[field] = body[field]
@@ -70,7 +61,6 @@ def delete_movie(movieid):
     write(movies)
     return movie
 
-# Ici pour graphQl cela me semble plus simple de renvoyer uniquement les dates et de laisser le resolver faire tout au propre.
 def get_movie_times(movieid):
     """Movie with its screening dates (calls Schedule)."""
     try:
@@ -81,7 +71,7 @@ def get_movie_times(movieid):
         raise UpstreamError("schedule service error")
     return r.json()["dates"]
 
-# Pour graphQL, si on supprime un movie et que le resolver d'actors à besoin du film supprimer faut lui dire que l'id n'existe plus.
 def get_by_ids(movie_ids):
-    id_set = set(movie_ids)
-    return [m for m in movies if m["id"] in id_set]
+    """One result per id, in the same order; None for an unknown id."""
+    by_id = {m["id"]: m for m in movies}
+    return [by_id.get(movieid) for movieid in movie_ids]

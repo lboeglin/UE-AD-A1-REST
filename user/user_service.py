@@ -111,17 +111,23 @@ def delete_user(userid):
     return user
 
 def get_user_with_bookings(userid, auth_header):
-    """User with detailed bookings (calls Booking, forwards the token)."""
+    """User with detailed bookings (calls Booking, forwards the token); unknown movies get a null title."""
     user = get_by_id(userid)
+    query = """query ($id: ID!) {
+        booking_with_userid(_userid: $id) { dates { date movies movies_details { id title director rating } } }
+    }"""
     try:
-        r = requests.get(f"{BOOKING_URL}/bookings/{userid}/movies",
-                         headers={"Authorization": auth_header or ""}, timeout=TIMEOUT)
+        r = requests.post(f"{BOOKING_URL}/graphql", json={"query": query, "variables": {"id": userid}},
+                          headers={"Authorization": auth_header or ""}, timeout=TIMEOUT)
     except requests.RequestException:
         raise ServiceUnavailableError("booking service unavailable")
-    if r.status_code == 404:
-        dates = []
-    elif r.status_code == 200:
-        dates = r.json()["dates"]
-    else:
-        raise UpstreamError("booking service error")
+    result = r.json()
+    errors = [e["message"] for e in result.get("errors", [])]
+    if errors and errors != ["no booking for this user"]:
+        raise UpstreamError("booking service error: " + "; ".join(errors))
+    booking = (result.get("data") or {}).get("booking_with_userid")
+    dates = [{"date": d["date"],
+              "movies": [movie or {"id": movieid, "title": None}
+                         for movieid, movie in zip(d["movies"], d["movies_details"])]}
+             for d in booking["dates"]] if booking else []
     return {**user, "bookings": dates}

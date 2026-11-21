@@ -85,14 +85,19 @@ def delete_time(date):
     write(times)
     return time
 
+MOVIES_QUERY = """query ($ids: [ID!]!) {
+    movies_with_ids(_ids: $ids) { id title director rating }
+}"""
+
 def get_movies_by_date(date):
-    """Schedule of a date with movie details (calls Movie)."""
+    """Schedule of a date with movie details (calls Movie); unknown ids get a null title."""
     time = get_by_date(date)
-    movies = []
     try:
-        for movieid in time["movies"]:
-            r = requests.get(f"{MOVIE_URL}/movies/{movieid}", timeout=TIMEOUT)
-            movies.append(r.json() if r.status_code == 200 else {"id": movieid, "title": None})
+        r = requests.post(f"{MOVIE_URL}/graphql", json={"query": MOVIES_QUERY, "variables": {"ids": time["movies"]}},
+                          timeout=TIMEOUT)
     except requests.RequestException:
         raise ServiceUnavailableError("movie service unavailable")
-    return {"date": date, "movies": movies}
+    found = (r.json().get("data") or {}).get("movies_with_ids") if r.status_code == 200 else None
+    found = found or [None] * len(time["movies"])
+    return {"date": date, "movies": [movie or {"id": movieid, "title": None}
+                                     for movieid, movie in zip(time["movies"], found)]}
