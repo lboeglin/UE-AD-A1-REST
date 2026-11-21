@@ -4,6 +4,7 @@ import hmac
 import json
 import os
 import time
+from functools import wraps
 
 SECRET = os.environ.get("JWT_SECRET", "ohnothereisnosecret")
 
@@ -38,12 +39,20 @@ def token_payload(req):
     except ValueError as e:
         raise PermissionError(str(e))
 
-def check_admin(req):
-    payload = token_payload(req)
-    if payload.get("role") != "admin":
-        raise PermissionError("admin role required")
+def require_admin(resolver):
+    @wraps(resolver)
+    def wrapper(obj, info, **kwargs):
+        payload = token_payload(info.context["request"])
+        if payload.get("role") != "admin":
+            raise PermissionError("admin role required")
+        return resolver(obj, info, **kwargs)
+    return wrapper
 
-def check_self_or_admin(req, userid):
-    payload = token_payload(req)
-    if payload.get("role") != "admin" and payload.get("sub") != userid:
-        raise PermissionError("forbidden")
+def require_self_or_admin(resolver):
+    @wraps(resolver)
+    def wrapper(obj, info, **kwargs):
+        payload = token_payload(info.context["request"])
+        if payload.get("role") != "admin" and payload.get("sub") != kwargs["_userid"]:
+            raise PermissionError("forbidden")
+        return resolver(obj, info, **kwargs)
+    return wrapper
