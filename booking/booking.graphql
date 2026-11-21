@@ -8,9 +8,9 @@ type Query {
 }
 
 type Mutation {
-    "Books a movie for a user. The movie must be scheduled on that date (calls Schedule). The user themself or an admin."
+    "Books a movie for a user on a date (format YYYYMMDD). The movie must be scheduled on that date (calls Schedule). The user themself or an admin."
     add_booking(_userid: ID!, _date: String!, _movieid: ID!): Booking
-    "Cancels a booking. The user themself or an admin."
+    "Cancels a booking (date format YYYYMMDD). The user themself or an admin."
     delete_booking(_userid: ID!, _date: String!, _movieid: ID!): DeletedBooking
 }
 
@@ -25,10 +25,11 @@ type DateBooking {
     date: String!
     "Ids of the booked movies."
     movies: [ID!]
-    "Details of the booked movies (calls Movie)."
+    "Details of the booked movies (calls Movie), in the same order as movies; null for a movie that no longer exists."
     movies_details: [Movie]
 }
 
+"Movie details returned by the Movie service."
 type Movie {
     id: ID!
     title: String
@@ -43,13 +44,16 @@ type DeletedBooking {
     movieid: ID!
 }
 
+"Bookings of a movie."
 type MovieBookings {
     movieid: ID!
     bookings: [UserBooking]
 }
 
+"A user who booked the movie, with the date."
 type UserBooking {
     userid: ID!
+    "Name of the user (calls User); null if the user no longer exists."
     name: String
     date: String!
 }
