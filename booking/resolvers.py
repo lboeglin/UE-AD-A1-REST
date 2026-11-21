@@ -23,4 +23,4 @@ def delete_booking(_, info, _userid, _date, _movieid):
 
 def resolve_movies_details(day, info):
    token = info.context["request"].headers.get("Authorization", "")
-   return [booking_service.get_movie(movieid, token) for movieid in day["movies"]]
+   return booking_service.get_movies(day["movies"], token)

@@ -2,21 +2,21 @@ type Query {
     "All bookings. Admin only."
     bookings: [Booking]
     "Bookings of one user. The user themself or an admin."
-    booking_with_userid(_userid: String!): Booking
+    booking_with_userid(_userid: ID!): Booking
     "Users who booked a movie, with their names (calls User). Admin only."
-    bookings_for_movie(_movieid: String!): MovieBookings
+    bookings_for_movie(_movieid: ID!): MovieBookings
 }
 
 type Mutation {
     "Books a movie for a user. The movie must be scheduled on that date (calls Schedule). The user themself or an admin."
-    add_booking(_userid: String!, _date: String!, _movieid: String!): Booking
+    add_booking(_userid: ID!, _date: String!, _movieid: ID!): Booking
     "Cancels a booking. The user themself or an admin."
-    delete_booking(_userid: String!, _date: String!, _movieid: String!): DeletedBooking
+    delete_booking(_userid: ID!, _date: String!, _movieid: ID!): DeletedBooking
 }
 
 "All bookings of a user, grouped by date."
 type Booking {
-    userid: String!
+    userid: ID!
     dates: [DateBooking]
 }
 
@@ -24,13 +24,13 @@ type Booking {
 type DateBooking {
     date: String!
     "Ids of the booked movies."
-    movies: [String!]
+    movies: [ID!]
     "Details of the booked movies (calls Movie)."
     movies_details: [Movie]
 }
 
 type Movie {
-    id: String!
+    id: ID!
     title: String
     director: String
     rating: Float
@@ -38,18 +38,18 @@ type Movie {
 
 "The booking that was cancelled."
 type DeletedBooking {
-    userid: String!
+    userid: ID!
     date: String!
-    movieid: String!
+    movieid: ID!
 }
 
 type MovieBookings {
-    movieid: String!
+    movieid: ID!
     bookings: [UserBooking]
 }
 
 type UserBooking {
-    userid: String!
+    userid: ID!
     name: String
     date: String!
 }

@@ -85,18 +85,19 @@ def delete_booking(userid, date, movieid):
    write(bookings)
    return {"userid": userid, "date": date, "movieid": movieid}
 
-MOVIE_QUERY = """query ($id: ID!) {
-   movie_with_id(id: $id) { id title director rating }
+MOVIES_QUERY = """query ($ids: [ID!]!) {
+   movies_with_ids(_ids: $ids) { id title director rating }
 }"""
 
-def get_movie(movieid, auth_header):
+def get_movies(movieids, auth_header):
+   """Details of several movies (calls Movie); None for an unknown id."""
    try:
-      r = requests.post(f"{MOVIE_URL}/graphql", json={"query": MOVIE_QUERY, "variables": {"id": movieid}},
+      r = requests.post(f"{MOVIE_URL}/graphql", json={"query": MOVIES_QUERY, "variables": {"ids": movieids}},
                         headers={"Authorization": auth_header}, timeout=TIMEOUT)
    except requests.RequestException:
       raise ServiceUnavailableError("movie service unavailable")
-   movie = (r.json().get("data") or {}).get("movie_with_id") if r.status_code == 200 else None
-   return movie or {"id": movieid, "title": None}
+   found = (r.json().get("data") or {}).get("movies_with_ids") if r.status_code == 200 else None
+   return found or [None] * len(movieids)
 
 def get_users_for_movie(movieid):
    """Who booked movieid and when, with user names (calls User)."""

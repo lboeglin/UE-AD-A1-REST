@@ -2,6 +2,7 @@ import json
 import os
 import uuid
 
+import movie_service
 from errors import ValidationError, NotFoundError
 
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "databases", "actors.json")
@@ -13,18 +14,11 @@ def write(actors):
     with open(DB_PATH, 'w') as f:
         json.dump({"actors": actors}, f, indent=2)
 
-def validate_fields(body, partial):
+def validate_fields(body):
     """Raises ValidationError for invalid actors fields."""
-    if not isinstance(body, dict):
-        raise ValidationError("body must be a JSON object")
-
-    if not partial and "firstname" not in body:
-        raise ValidationError("'firstname' is required")
     if "firstname" in body and (not isinstance(body["firstname"], str) or not body["firstname"]):
         raise ValidationError("'firstname' must be a non-empty string")
 
-    if not partial and "lastname" not in body:
-        raise ValidationError("'lastname' is required")
     if "lastname" in body and (not isinstance(body["lastname"], str) or not body["lastname"]):
         raise ValidationError("'lastname' must be a non-empty string")
 
@@ -33,6 +27,10 @@ def validate_fields(body, partial):
     if "films" in body:
         if not isinstance(body["films"], list) or not all(isinstance(item, str) for item in body["films"]):
             raise ValidationError("'films' must be a list of strings")
+        movie_ids = {m["id"] for m in movie_service.get_all()}
+        unknown = [f for f in body["films"] if f not in movie_ids]
+        if unknown:
+            raise ValidationError(f"unknown movie ids in 'films': {unknown}")
 
 
 def get_all():
@@ -45,13 +43,16 @@ def get_by_id(actorid):
     return actor
 
 def get_by_movie(movieid):
-    if not movieid:
-        raise ValidationError("missing 'movieid' query parameter")
-    matches = [a for a in actors if movieid in a.get("films", [])]
-    return matches
+    return [a for a in actors if movieid in a.get("films", [])]
+
+def remove_movie(movieid):
+    """Removes movieid from the films of every actor."""
+    for actor in get_by_movie(movieid):
+        actor["films"].remove(movieid)
+    write(actors)
 
 def add_actor(body):
-    validate_fields(body, partial=False)
+    validate_fields(body)
     actor = {"id": str(uuid.uuid4()),
              "firstname": body["firstname"],
              "lastname": body["lastname"],
@@ -63,7 +64,7 @@ def add_actor(body):
 
 def update_actor(actorid, body):
     actor = get_by_id(actorid)
-    validate_fields(body, partial=True)
+    validate_fields(body)
     for field in ("firstname", "lastname", "birthyear", "films"):
         if field in body:
             actor[field] = body[field]
