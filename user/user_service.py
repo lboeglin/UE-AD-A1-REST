@@ -1,11 +1,16 @@
-import json
 import os
+
 import requests
+
+from db import init_collection
 from jwt_utils import jwt_encode
 
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "databases", "users.json")
 BOOKING_URL = os.environ.get("BOOKING_URL", "http://localhost:3201")
 TIMEOUT = 3
+
+collection = init_collection("users")
+
+NO_ID = {"_id": 0}
 
 class ServiceUnavailableError(Exception):
     """Another service could not be reached."""
@@ -24,13 +29,6 @@ class ConflictError(Exception):
 class ValidationError(Exception):
     pass
 
-with open(DB_PATH, 'r') as jsf:
-    users = json.load(jsf)["users"]
-
-def write(users):
-    with open(DB_PATH, 'w') as f:
-        json.dump({"users": users}, f, indent=2)
-
 def validate_fields(body, partial):
     """Raises ValidationError for invalid user fields."""
     if not isinstance(body, dict):
@@ -47,7 +45,7 @@ def validate_fields(body, partial):
         raise ValidationError("'id' must be a non-empty string")
 
 def exists(userid):
-    return any(u["id"] == userid for u in users)
+    return collection.find_one({"id": userid}) is not None
 
 def generate_id(name):
     """Builds an id like 'chris_rivers' from the name, suffixed if already taken."""
@@ -59,10 +57,10 @@ def generate_id(name):
     return userid
 
 def get_all():
-    return users
+    return list(collection.find({}, NO_ID))
 
 def get_by_id(userid):
-    user = next((u for u in users if u["id"] == userid), None)
+    user = collection.find_one({"id": userid}, NO_ID)
     if user is None:
         raise NotFoundError("user not found")
     return user
@@ -83,31 +81,27 @@ def add_user(body):
         userid = generate_id(body["name"])
     user = {"id": userid, "name": body["name"],
             "last_active": body.get("last_active", 0), "role": body.get("role", "user")}
-    users.append(user)
-    write(users)
+    collection.insert_one(dict(user))
     return user
 
 def update_user(userid, body):
-    user = get_by_id(userid)
+    get_by_id(userid)
     validate_fields(body, partial=True)
-    for field in ("name", "last_active"):
-        if field in body:
-            user[field] = body[field]
-    write(users)
-    return user
+    fields = {f: body[f] for f in ("name", "last_active") if f in body}
+    if fields:
+        collection.update_one({"id": userid}, {"$set": fields})
+    return get_by_id(userid)
 
 def update_role(userid, role):
-    user = get_by_id(userid)
+    get_by_id(userid)
     if not role:
         raise ValidationError("role must be a non-empty string")
-    user["role"] = role
-    write(users)
-    return user
+    collection.update_one({"id": userid}, {"$set": { "role": role }})
+    return get_by_id(userid)
 
 def delete_user(userid):
     user = get_by_id(userid)
-    users.remove(user)
-    write(users)
+    collection.delete_one({"id": userid})
     return user
 
 def get_user_with_bookings(userid, auth_header):
