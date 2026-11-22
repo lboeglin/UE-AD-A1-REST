@@ -1,7 +1,38 @@
 services:
   movie:
-    build: ./movie/
+    build:
+      context: .
+      dockerfile: movie/Dockerfile
     ports:
       - "3200:3200"
-  # to continue
+    environment:
+      SCHEDULE_URL: http://schedule:3202
 
+  booking:
+    build:
+      context: .
+      dockerfile: booking/Dockerfile
+    ports:
+      - "3201:3201"
+    environment:
+      SCHEDULE_URL: http://schedule:3202
+      MOVIE_URL: http://movie:3200
+      USER_URL: http://user:3203
+
+  schedule:
+    build:
+      context: .
+      dockerfile: schedule/Dockerfile
+    ports:
+      - "3202:3202"
+    environment:
+      MOVIE_URL: http://movie:3200
+
+  user:
+    build:
+      context: .
+      dockerfile: user/Dockerfile
+    ports:
+      - "3203:3203"
+    environment:
+      BOOKING_URL: http://booking:3201
