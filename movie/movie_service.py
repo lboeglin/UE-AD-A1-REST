@@ -1,21 +1,15 @@
-import json
 import os
 import uuid
-
 import requests
-
+from db import init_collection
 from errors import ValidationError, NotFoundError, ServiceUnavailableError, UpstreamError
 
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "databases", "movies.json")
 SCHEDULE_URL = os.environ.get("SCHEDULE_URL", "http://localhost:3202")
 TIMEOUT = 3
 
-with open(DB_PATH, 'r') as jsf:
-    movies = json.load(jsf)["movies"]
+collection = init_collection("movies")
 
-def write(movies):
-    with open(DB_PATH, 'w') as f:
-        json.dump({"movies": movies}, f, indent=2)
+NO_ID = {"_id": 0}
 
 def validate_fields(body):
     """Raises ValidationError for invalid movie fields."""
@@ -27,38 +21,35 @@ def validate_fields(body):
         raise ValidationError("'rating' must be a number")
 
 def get_all():
-    return movies
+    return list(collection.find({}, NO_ID))
 
 def get_by_id(movieid):
-    movie = next((m for m in movies if m["id"] == movieid), None)
+    movie = collection.find_one({"id": movieid}, NO_ID)
     if movie is None:
         raise NotFoundError("movie not found")
     return movie
 
 def get_by_title(title):
-    return [m for m in movies if m["title"] == title]
+    return list(collection.find({"title": title}, NO_ID))
 
 def add_movie(body):
     validate_fields(body)
     movie = {"id": str(uuid.uuid4()), "title": body["title"],
              "rating": body.get("rating", 0), "director": body.get("director", "")}
-    movies.append(movie)
-    write(movies)
+    collection.insert_one(dict(movie))
     return movie
 
 def update_movie(movieid, body):
-    movie = get_by_id(movieid)
+    get_by_id(movieid)
     validate_fields(body)
-    for field in ("title", "rating", "director"):
-        if field in body:
-            movie[field] = body[field]
-    write(movies)
-    return movie
+    fields = {f: body[f] for f in ("title", "rating", "director") if f in body}
+    if fields:
+        collection.update_one({"id": movieid}, {"$set": fields})
+    return get_by_id(movieid)
 
 def delete_movie(movieid):
     movie = get_by_id(movieid)
-    movies.remove(movie)
-    write(movies)
+    collection.delete_one({"id": movieid})
     return movie
 
 def get_movie_times(movieid):
@@ -73,5 +64,5 @@ def get_movie_times(movieid):
 
 def get_by_ids(movie_ids):
     """One result per id, in the same order; None for an unknown id."""
-    by_id = {m["id"]: m for m in movies}
+    by_id = {m["id"]: m for m in collection.find({"id": {"$in": movie_ids}}, NO_ID)}
     return [by_id.get(movieid) for movieid in movie_ids]

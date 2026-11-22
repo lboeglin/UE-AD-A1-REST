@@ -1,18 +1,11 @@
-import json
-import os
 import uuid
-
 import movie_service
+from db import init_collection
 from errors import ValidationError, NotFoundError
 
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "databases", "actors.json")
+collection = init_collection("actors")
 
-with open(DB_PATH, 'r') as jsf:
-    actors = json.load(jsf)["actors"]
-
-def write(actors):
-    with open(DB_PATH, 'w') as f:
-        json.dump({"actors": actors}, f, indent=2)
+NO_ID = {"_id": 0}
 
 def validate_fields(body):
     """Raises ValidationError for invalid actors fields."""
@@ -34,22 +27,20 @@ def validate_fields(body):
 
 
 def get_all():
-    return actors
+    return list(collection.find({}, NO_ID))
 
 def get_by_id(actorid):
-    actor = next((a for a in actors if a["id"] == actorid), None)
+    actor = collection.find_one({"id": actorid}, NO_ID)
     if actor is None:
         raise NotFoundError("actor not found")
     return actor
 
 def get_by_movie(movieid):
-    return [a for a in actors if movieid in a.get("films", [])]
+    return list(collection.find({"films": movieid}, NO_ID))
 
 def remove_movie(movieid):
     """Removes movieid from the films of every actor."""
-    for actor in get_by_movie(movieid):
-        actor["films"].remove(movieid)
-    write(actors)
+    collection.update_many({"films": movieid}, {"$pull": {"films": movieid}})
 
 def add_actor(body):
     validate_fields(body)
@@ -58,21 +49,18 @@ def add_actor(body):
              "lastname": body["lastname"],
              "birthyear": body.get("birthyear", 0),
              "films": body.get("films", [])}
-    actors.append(actor)
-    write(actors)
+    collection.insert_one(dict(actor))
     return actor
 
 def update_actor(actorid, body):
-    actor = get_by_id(actorid)
+    get_by_id(actorid)
     validate_fields(body)
-    for field in ("firstname", "lastname", "birthyear", "films"):
-        if field in body:
-            actor[field] = body[field]
-    write(actors)
-    return actor
+    fields = {f: body[f] for f in ("firstname", "lastname", "birthyear", "films") if f in body}
+    if fields:
+        collection.update_one({"id": actorid}, {"$set": fields})
+    return get_by_id(actorid)
 
 def delete_actor(actorid):
     actor = get_by_id(actorid)
-    actors.remove(actor)
-    write(actors)
+    collection.delete_one({"id": actorid})
     return actor
