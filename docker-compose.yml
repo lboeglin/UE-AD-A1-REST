@@ -39,6 +39,9 @@ services:
       - "3203:3203"
     environment:
       BOOKING_URL: http://booking:3201
+      MONGO_URL: mongodb://root:example@mongo:27017/
+    depends_on:
+      - mongo
 
   mongo:
     image: mongo
