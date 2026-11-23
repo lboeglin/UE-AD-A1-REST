@@ -48,7 +48,7 @@ L'application est découpée en 4 services : **Movie**, **Schedule**, **Booking*
 
 - **Docker** : chaque service a son `Dockerfile`, et le `docker-compose.yml` lance les 4 services avec MongoDB et mongo-express (port 8081).
 - **GraphQL** : Movie et Booking ont été réécrits en GraphQL (Ariadne).
-- **MongoDB** : Movie stocke ses films et ses acteurs dans MongoDB.
+- **MongoDB** : Movie stocke ses films et ses acteurs dans une base MongoDB et User dans une autre, mais un seul conteneur Mongo.
 
 ### En plus : authentification JWT
 
