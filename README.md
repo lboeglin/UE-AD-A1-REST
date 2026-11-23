@@ -44,7 +44,7 @@ L'application est découpée en 4 services : **Movie**, **Schedule**, **Booking*
 | Movie    | 3200 | GraphQL | MongoDB  |
 | Booking  | 3201 | GraphQL | JSON     |
 | Schedule | 3202 | REST    | JSON     |
-| User     | 3203 | REST    | JSON     |
+| User     | 3203 | REST    | MongoDB     |
 
 - **Docker** : chaque service a son `Dockerfile`, et le `docker-compose.yml` lance les 4 services avec MongoDB et mongo-express (port 8081).
 - **GraphQL** : Movie et Booking ont été réécrits en GraphQL (Ariadne).
