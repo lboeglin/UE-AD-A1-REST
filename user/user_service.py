@@ -1,7 +1,5 @@
 import os
-
 import requests
-
 from db import init_collection
 from jwt_utils import jwt_encode
 
@@ -66,7 +64,7 @@ def get_by_id(userid):
     return user
 
 def login(body):
-    if not isinstance(body, dict) or "user_id" not in body:
+    if not isinstance(body, dict) or not isinstance(body.get("user_id"), str):
         raise ValidationError("'user_id' is required")
     user = get_by_id(body["user_id"])
     return {"token": jwt_encode({"sub": user["id"], "role": user["role"]})}
