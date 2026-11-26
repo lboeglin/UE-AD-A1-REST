@@ -1,0 +1,35 @@
+meta {
+  name: 14 Supprimer le film (admin)
+  type: graphql
+  seq: 3
+}
+
+post {
+  url: {{movieUrl}}/graphql
+  body: graphql
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+body:graphql {
+  mutation ($id: ID!) {
+    del_movie(_id: $id) {
+      id
+      title
+    }
+  }
+}
+
+body:graphql:vars {
+  {
+    "id": "{{movieId}}"
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.data.del_movie.id: eq {{movieId}}
+}

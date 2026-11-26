@@ -1,0 +1,37 @@
+meta {
+  name: 13 Annuler la reservation
+  type: graphql
+  seq: 2
+}
+
+post {
+  url: {{bookingUrl}}/graphql
+  body: graphql
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{userToken}}
+}
+
+body:graphql {
+  mutation ($user: ID!, $date: String!, $movie: ID!) {
+    delete_booking(_userid: $user, _date: $date, _movieid: $movie) {
+      userid
+      date
+      movieid
+    }
+  }
+}
+
+body:graphql:vars {
+  {
+    "user": "{{userId}}",
+    "date": "{{date}}",
+    "movie": "{{movieId}}"
+  }
+}
+
+assert {
+  res.status: eq 200
+}

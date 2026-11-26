@@ -1,0 +1,39 @@
+meta {
+  name: 12 Qui a reserve le film (admin)
+  type: graphql
+  seq: 1
+}
+
+post {
+  url: {{bookingUrl}}/graphql
+  body: graphql
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+body:graphql {
+  query ($movie: ID!) {
+    bookings_for_movie(_movieid: $movie) {
+      movieid
+      bookings {
+        userid
+        name
+        date
+      }
+    }
+  }
+}
+
+body:graphql:vars {
+  {
+    "movie": "{{movieId}}"
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.data.bookings_for_movie.bookings: isNotEmpty
+}

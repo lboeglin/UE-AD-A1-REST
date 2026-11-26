@@ -1,0 +1,31 @@
+meta {
+  name: 03 Catalogue des films
+  type: graphql
+  seq: 1
+}
+
+post {
+  url: {{movieUrl}}/graphql
+  body: graphql
+  auth: none
+}
+
+body:graphql {
+  {
+    all_movies {
+      id
+      title
+      rating
+      actors {
+        firstname
+        lastname
+      }
+      times
+    }
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.data.all_movies: isNotEmpty
+}

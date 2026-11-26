@@ -1,0 +1,45 @@
+meta {
+  name: 04 Ajout film (admin)
+  type: graphql
+  seq: 2
+}
+
+post {
+  url: {{movieUrl}}/graphql
+  body: graphql
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+body:graphql {
+  mutation ($movie: MovieCreateInput!) {
+    add_movie(_movieinput: $movie) {
+      id
+      title
+      director
+      rating
+    }
+  }
+}
+
+body:graphql:vars {
+  {
+    "movie": {
+      "title": "Dune",
+      "director": "Denis Villeneuve",
+      "rating": 8.1
+    }
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.data.add_movie.title: eq Dune
+}
+
+script:post-response {
+  bru.setVar("movieId", res.body.data.add_movie.id);
+}

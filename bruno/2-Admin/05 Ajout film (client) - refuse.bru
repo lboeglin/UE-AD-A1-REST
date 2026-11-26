@@ -1,0 +1,28 @@
+meta {
+  name: 05 Ajout film (client) - refuse
+  type: graphql
+  seq: 3
+}
+
+post {
+  url: {{movieUrl}}/graphql
+  body: graphql
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{userToken}}
+}
+
+body:graphql {
+  mutation {
+    add_movie(_movieinput: {title: "Film pirate"}) {
+      id
+    }
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.errors: isNotEmpty
+}

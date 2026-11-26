@@ -1,0 +1,15 @@
+meta {
+  name: 07 Programme du jour
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{scheduleUrl}}/times/{{date}}/movies
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+}

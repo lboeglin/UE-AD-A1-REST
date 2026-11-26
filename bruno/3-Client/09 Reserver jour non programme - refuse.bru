@@ -1,0 +1,36 @@
+meta {
+  name: 09 Reserver jour non programme - refuse
+  type: graphql
+  seq: 2
+}
+
+post {
+  url: {{bookingUrl}}/graphql
+  body: graphql
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{userToken}}
+}
+
+body:graphql {
+  mutation ($user: ID!, $date: String!, $movie: ID!) {
+    add_booking(_userid: $user, _date: $date, _movieid: $movie) {
+      userid
+    }
+  }
+}
+
+body:graphql:vars {
+  {
+    "user": "{{userId}}",
+    "date": "{{otherDate}}",
+    "movie": "{{movieId}}"
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.errors: isNotEmpty
+}

@@ -1,0 +1,25 @@
+meta {
+  name: 06 Programmer le film
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{scheduleUrl}}/times/{{date}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+body:json {
+  {
+    "movies": ["{{movieId}}"]
+  }
+}
+
+assert {
+  res.status: eq 200
+}

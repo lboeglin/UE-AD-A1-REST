@@ -1,0 +1,42 @@
+meta {
+  name: 08 Reserver
+  type: graphql
+  seq: 1
+}
+
+post {
+  url: {{bookingUrl}}/graphql
+  body: graphql
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{userToken}}
+}
+
+body:graphql {
+  mutation ($user: ID!, $date: String!, $movie: ID!) {
+    add_booking(_userid: $user, _date: $date, _movieid: $movie) {
+      userid
+      dates {
+        date
+        movies_details {
+          title
+        }
+      }
+    }
+  }
+}
+
+body:graphql:vars {
+  {
+    "user": "{{userId}}",
+    "date": "{{date}}",
+    "movie": "{{movieId}}"
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.data.add_booking.userid: eq {{userId}}
+}
