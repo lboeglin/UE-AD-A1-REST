@@ -6,25 +6,13 @@ Projet d'API REST en Flask réalisé pour l'UE Architectures distribuées, IMT A
 
 ## Branches
 
-- `rest` : TP REST
-- `mixte` : TP mixte
+- [`main`](https://github.com/lboeglin/UE-AD-A1-REST/tree/main) : présentation du dépôt
+- [`rest`](https://github.com/lboeglin/UE-AD-A1-REST/tree/rest) : TP REST (cette branche)
+- [`mixte`](https://github.com/lboeglin/UE-AD-A1-REST/tree/mixte) : TP MIXTE
 
 ## Consignes (TP REST)
 
-Une application de cinéma découpée en 4 micro-services, chacun ayant sa propre base JSON :
-
-- **Movie** : gère les films (CRUD).
-- **Schedule** : gère les dates de diffusion des films (CRD, l'update n'est pas obligatoire).
-- **Booking** : gère les réservations des utilisateurs (CRD). Il appelle Schedule pour vérifier qu'un film est bien programmé à la date réservée.
-- **User** : gère les utilisateurs (CRUD).
-
-Travail demandé :
-
-1. Implémenter les opérations de chaque service de façon logique (par exemple, un non-admin ne voit pas les réservations des autres).
-2. Coder deux ou trois points d'entrée supplémentaires qui recoupent des informations entre services. On peut ajouter des flèches entre les services si besoin.
-3. Documenter chaque service en OpenAPI (fichiers `*.yaml`), avec des exemples et la description des entrées/sorties.
-
-Les appels entre services se font avec le package `requests`.
+Voir le [sujet du TP REST](https://helene-coullon.fr/pages/ue-ad-fil-25-26/tp-rest/).
 
 ## Services
 
@@ -53,15 +41,15 @@ flowchart TD
 
     User
     Booking
-    Schedule
     Movie
+    Schedule
 
     Client -->|REST| User
     Client -->|REST| Booking
     Client -->|REST| Schedule
-    Client -->|REST| Movie
 
     Booking -->|REST| Movie
+    Client -->|REST| Movie
     Booking -->|REST| Schedule
 
     Booking <-.->|REST| User
@@ -72,3 +60,27 @@ Par rapport au schéma d'origine, nous avons ajouté les flèches en pointillés
 
 - **Movie ↔ Schedule** : un film avec ses dates de diffusion (`GET /movies/<movieid>/times`), et le programme d'une date avec le détail des films (`GET /times/<date>/movies`).
 - **User ↔ Booking** : un utilisateur avec ses réservations détaillées (`GET /users/<user_id>/bookings`), et la liste des personnes ayant réservé un film (`GET /bookings/movie/<movieid>`).
+
+## Authentification JWT
+
+En plus des consignes, les services sont protégés par un token JWT (HS256).
+
+1. On récupère un token auprès du service User :
+
+   ```bash
+   curl -X POST http://localhost:3203/login -H "Content-Type: application/json" -d '{"user_id": "rafael_baudry"}'
+   ```
+
+2. On l'envoie ensuite dans l'en-tête de chaque requête :
+
+   ```
+   Authorization: Bearer <token>
+   ```
+
+Le token contient l'identifiant (`sub`) et le rôle (`role`) de l'utilisateur. Il expire au bout d'une heure.
+
+| Accès | Routes concernées |
+|-------|-------------------|
+| Libre | Consultation des films, des dates de diffusion et des utilisateurs |
+| L'utilisateur concerné ou un admin | Ses réservations, la modification de son profil |
+| Admin uniquement | Création, modification et suppression des films et des dates, gestion des utilisateurs et de leur rôle, liste de toutes les réservations |
