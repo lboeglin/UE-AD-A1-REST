@@ -21,7 +21,7 @@ type Mutation {
     add_movie(_movieinput: MovieCreateInput!): Movie
     "Updates the provided fields of a movie (partial update). Admin only."
     update_movie(_id: ID!, _movieinput: MovieUpdateInput!): Movie
-    "Deletes a movie and removes it from every actor's filmography. Admin only."
+    "Deletes a movie, removes it from every actor's filmography and from the schedule (calls Schedule). Admin only."
     del_movie(_id: ID!): Movie
 
     "Adds a new actor with a server-generated UUID. Admin only."

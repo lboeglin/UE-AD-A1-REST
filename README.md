@@ -90,7 +90,7 @@ flowchart TD
 
 Par rapport au schéma d'origine, nous avons ajouté les flèches en pointillés :
 
-- **Movie ↔ Schedule** : un film avec ses dates de diffusion (champ GraphQL `times` du type `Movie`, qui interroge Schedule via `GET /movies/<movieid>/times`), et le programme d'une date avec le détail des films (`GET /times/<date>/movies`, qui interroge Movie en GraphQL).
+- **Movie ↔ Schedule** : un film avec ses dates de diffusion (champ GraphQL `times` du type `Movie`, qui interroge Schedule via `GET /movies/<movieid>/times`), la suppression d'un film qui le retire aussi du programme (mutation `del_movie`, qui appelle `DELETE /movies/<movieid>/times`), et le programme d'une date avec le détail des films (`GET /times/<date>/movies`, qui interroge Movie en GraphQL).
 - **User ↔ Booking** : un utilisateur avec ses réservations détaillées (`GET /users/<user_id>/bookings`, qui interroge Booking en GraphQL), et la liste des personnes ayant réservé un film (requête GraphQL `bookings_for_movie` sur Booking).
 
 ## Authentification JWT

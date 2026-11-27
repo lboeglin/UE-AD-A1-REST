@@ -48,6 +48,11 @@ def get_movies_bydate(date):
 def get_dates_for_movie(movieid):
     return make_response(jsonify(schedule_service.get_dates_for_movie(movieid)), 200)
 
+@app.route("/movies/<movieid>/times", methods=['DELETE'])
+@require_admin
+def unschedule_movie(movieid):
+    return make_response(jsonify(schedule_service.remove_movie(movieid)), 200)
+
 @app.route("/times", methods=['POST'])
 @require_admin
 def add_time():

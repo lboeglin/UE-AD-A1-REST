@@ -35,6 +35,8 @@ def update_movie(_, info, _id, _movieinput):
 
 @require_admin
 def del_movie(_, info, _id):
+    movie_service.get_by_id(_id)
+    movie_service.unschedule_movie(_id, info.context["request"].headers.get("Authorization", ""))
     movie = movie_service.delete_movie(_id)
     actor_service.remove_movie(_id)
     return movie

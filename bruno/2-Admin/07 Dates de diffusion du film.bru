@@ -1,0 +1,31 @@
+meta {
+  name: 07 Dates de diffusion du film
+  type: graphql
+  seq: 5
+}
+
+post {
+  url: {{movieUrl}}/graphql
+  body: graphql
+  auth: none
+}
+
+body:graphql {
+  query ($id: ID!) {
+    movie_with_id(_id: $id) {
+      title
+      times
+    }
+  }
+}
+
+body:graphql:vars {
+  {
+    "id": "{{movieId}}"
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.data.movie_with_id.times: contains "{{date}}"
+}

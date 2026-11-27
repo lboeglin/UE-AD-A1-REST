@@ -1,5 +1,5 @@
 meta {
-  name: 13 Annuler la reservation
+  name: 10 Reserver jour non programme - refuse
   type: graphql
   seq: 2
 }
@@ -16,10 +16,8 @@ auth:bearer {
 
 body:graphql {
   mutation ($user: ID!, $date: String!, $movie: ID!) {
-    delete_booking(_userid: $user, _date: $date, _movieid: $movie) {
+    add_booking(_userid: $user, _date: $date, _movieid: $movie) {
       userid
-      date
-      movieid
     }
   }
 }
@@ -27,11 +25,13 @@ body:graphql {
 body:graphql:vars {
   {
     "user": "{{userId}}",
-    "date": "{{date}}",
+    "date": "{{otherDate}}",
     "movie": "{{movieId}}"
   }
 }
 
 assert {
   res.status: eq 200
+  res.body.errors: isNotEmpty
+  res.body.errors[0].extensions.code: eq BAD_USER_INPUT
 }

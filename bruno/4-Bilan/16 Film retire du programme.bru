@@ -1,0 +1,16 @@
+meta {
+  name: 16 Film retire du programme
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{scheduleUrl}}/movies/{{movieId}}/times
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body.dates: isEmpty
+}

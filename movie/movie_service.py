@@ -62,6 +62,15 @@ def get_movie_times(movieid):
         raise UpstreamError("schedule service error")
     return r.json()["dates"]
 
+def unschedule_movie(movieid, auth_header):
+    try:
+        r = requests.delete(f"{SCHEDULE_URL}/movies/{movieid}/times",
+                            headers={"Authorization": auth_header}, timeout=TIMEOUT)
+    except requests.RequestException:
+        raise ServiceUnavailableError("schedule service unavailable")
+    if r.status_code != 200:
+        raise UpstreamError("schedule service error")
+
 def get_by_ids(movie_ids):
     """One result per id, in the same order; None for an unknown id."""
     by_id = {m["id"]: m for m in collection.find({"id": {"$in": movie_ids}}, NO_ID)}
