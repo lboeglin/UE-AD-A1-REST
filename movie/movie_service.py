@@ -84,8 +84,15 @@ def update_rating(movieid, rate):
     write(movies)
     return movie
 
-def delete_movie(movieid):
+def delete_movie(movieid, auth_header):
     movie = get_by_id(movieid)
+    try:
+        r = requests.delete(f"{SCHEDULE_URL}/movies/{movieid}/times",
+                            headers={"Authorization": auth_header}, timeout=TIMEOUT)
+    except requests.RequestException:
+        raise ServiceUnavailableError("schedule service unavailable")
+    if r.status_code != 200:
+        raise UpstreamError("schedule service error")
     movies.remove(movie)
     write(movies)
     return movie

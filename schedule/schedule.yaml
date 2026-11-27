@@ -74,6 +74,35 @@ paths:
               example:
                 movieid: "720d006c-3a57-4b6a-b18f-9b713b073f3c"
                 dates: ["20151130", "20151201"]
+    delete:
+      tags:
+        - admin
+      summary: Unschedule a movie
+      description: Removes the movie from every date it is scheduled on, returns the dates it was removed from. Called by Movie when a movie is deleted.
+      parameters:
+        - name: movieid
+          in: path
+          required: true
+          description: Id of the movie
+          schema:
+            type: string
+          example: "720d006c-3a57-4b6a-b18f-9b713b073f3c"
+      security:
+        - bearerAuth: []
+      responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "200":
+          description: Movie unscheduled, returns the dates it was removed from
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovieDates"
+              example:
+                movieid: "720d006c-3a57-4b6a-b18f-9b713b073f3c"
+                dates: ["20151130", "20151201"]
 
   /times:
     post:

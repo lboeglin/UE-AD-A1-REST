@@ -142,6 +142,7 @@ paths:
       tags:
         - admin
       summary: Delete a movie
+      description: Also removes the movie from the schedule (calls Schedule).
       parameters:
         - $ref: "#/components/parameters/MovieId"
       security:
@@ -159,6 +160,22 @@ paths:
                 $ref: "#/components/schemas/Movie"
         "404":
           $ref: "#/components/responses/MovieNotFound"
+        "502":
+          description: The Schedule service returned an unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: "schedule service error"
+        "503":
+          description: The Schedule service is unreachable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: "schedule service unavailable"
 
   /movies/{movieid}/times:
     get:

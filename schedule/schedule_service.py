@@ -45,6 +45,14 @@ def get_all():
 def get_dates_for_movie(movieid):
     return {"movieid": movieid, "dates": [time["date"] for time in times if movieid in time["movies"]]}
 
+def remove_movie(movieid):
+    dates = [time["date"] for time in times if movieid in time["movies"]]
+    for time in times:
+        if movieid in time["movies"]:
+            time["movies"].remove(movieid)
+    write(times)
+    return {"movieid": movieid, "dates": dates}
+
 def get_by_date(date):
     for time in times:
         if time["date"]==date:

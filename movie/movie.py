@@ -68,7 +68,7 @@ def update_movie_rating(movieid, rate):
 @app.route("/movies/<movieid>", methods=['DELETE'])
 @require_admin
 def delete_movie(movieid):
-    return make_response(jsonify(movie_service.delete_movie(movieid)), 200)
+    return make_response(jsonify(movie_service.delete_movie(movieid, request.headers.get("Authorization", ""))), 200)
 
 if __name__ == "__main__":
     print("Server running in port %s"%(PORT))

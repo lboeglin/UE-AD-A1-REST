@@ -58,7 +58,7 @@ flowchart TD
 
 Par rapport au schéma d'origine, nous avons ajouté les flèches en pointillés :
 
-- **Movie ↔ Schedule** : un film avec ses dates de diffusion (`GET /movies/<movieid>/times`), et le programme d'une date avec le détail des films (`GET /times/<date>/movies`).
+- **Movie ↔ Schedule** : un film avec ses dates de diffusion (`GET /movies/<movieid>/times`), la suppression d'un film qui le retire aussi du programme (`DELETE /movies/<movieid>`, qui appelle `DELETE /movies/<movieid>/times` sur Schedule), et le programme d'une date avec le détail des films (`GET /times/<date>/movies`).
 - **User ↔ Booking** : un utilisateur avec ses réservations détaillées (`GET /users/<user_id>/bookings`), et la liste des personnes ayant réservé un film (`GET /bookings/movie/<movieid>`).
 
 ## Authentification JWT
