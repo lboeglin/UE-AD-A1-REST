@@ -8,6 +8,9 @@ from functools import wraps
 
 SECRET = os.environ.get("JWT_SECRET", "ohnothereisnosecret")
 
+class AuthenticationError(PermissionError):
+    pass
+
 def b64url_encode(data):
     return base64.urlsafe_b64encode(data).rstrip(b"=").decode()
 
@@ -33,11 +36,11 @@ def jwt_decode(token):
 def token_payload(req):
     auth = req.headers.get("Authorization", "")
     if not auth.startswith("Bearer "):
-        raise PermissionError("missing token")
+        raise AuthenticationError("missing token")
     try:
         return jwt_decode(auth[len("Bearer "):])
     except ValueError as e:
-        raise PermissionError(str(e))
+        raise AuthenticationError(str(e))
 
 def require_admin(resolver):
     @wraps(resolver)

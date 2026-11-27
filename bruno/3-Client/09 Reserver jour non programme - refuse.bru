@@ -33,4 +33,5 @@ body:graphql:vars {
 assert {
   res.status: eq 200
   res.body.errors: isNotEmpty
+  res.body.errors[0].extensions.code: eq BAD_USER_INPUT
 }

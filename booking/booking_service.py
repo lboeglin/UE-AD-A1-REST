@@ -96,8 +96,13 @@ def get_movies(movieids, auth_header):
                         headers={"Authorization": auth_header}, timeout=TIMEOUT)
    except requests.RequestException:
       raise ServiceUnavailableError("movie service unavailable")
-   found = (r.json().get("data") or {}).get("movies_with_ids") if r.status_code == 200 else None
-   return found or [None] * len(movieids)
+   try:
+      body = r.json()
+   except ValueError:
+      raise UpstreamError("movie service error")
+   if r.status_code != 200 or body.get("errors") or not body.get("data"):
+      raise UpstreamError("movie service error")
+   return body["data"]["movies_with_ids"]
 
 def get_users_for_movie(movieid):
    """Who booked movieid and when, with user names (calls User)."""
@@ -107,6 +112,8 @@ def get_users_for_movie(movieid):
       for userid, _ in found:
          if userid not in names:
             r = requests.get(f"{USER_URL}/users/{userid}", timeout=TIMEOUT)
+            if r.status_code not in (200, 404):
+               raise UpstreamError("user service error")
             names[userid] = r.json()["name"] if r.status_code == 200 else None
    except requests.RequestException:
       raise ServiceUnavailableError("user service unavailable")

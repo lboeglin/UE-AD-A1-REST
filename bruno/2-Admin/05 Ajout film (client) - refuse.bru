@@ -25,4 +25,5 @@ body:graphql {
 assert {
   res.status: eq 200
   res.body.errors: isNotEmpty
+  res.body.errors[0].extensions.code: eq FORBIDDEN
 }

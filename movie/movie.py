@@ -2,6 +2,7 @@ from ariadne import graphql_sync, make_executable_schema, load_schema_from_path,
 from flask import Flask, request, jsonify, make_response
 
 import resolvers as r
+from graphql_errors import format_error
 
 app = Flask(__name__)
 
@@ -45,11 +46,12 @@ def home():
 # graphql entry points
 @app.route('/graphql', methods=['POST'])
 def graphql_server():
-    data = request.get_json()
+    data = request.get_json(silent=True)
     success, result = graphql_sync(
         schema,
         data,
         context_value={"request": request},
+        error_formatter=format_error,
         debug=app.debug
     )
     status_code = 200 if success else 400
